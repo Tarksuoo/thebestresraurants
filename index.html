@@ -362,9 +362,9 @@ function LeafletEngine(){
   }
   map.on('move zoom resize viewreset',repaint);
   const clickFns=[];
-  map.on('click',e=>{ const d=hitTest(items,e.containerPoint.x,e.containerPoint.y); if(d){ d.onClick(); return; } clickFns.forEach(f=>f(e)); });
+  map.on('click',e=>{ if(Date.now()-lastTap<700) return; const d=hitTest(items,e.containerPoint.x,e.containerPoint.y); if(d){ lastTap=Date.now(); d.onClick(); return; } clickFns.forEach(f=>f(e)); });
   return {
-    name:'osm',
+    name:'osm', canvas:cv, items:()=>items,
     zoom:()=>map.getZoom(),
     setView:(la,lo,z)=>map.setView([la,lo],z),
     fit:()=>map.fitBounds([[BND.s,BND.w],[BND.n,BND.e]],{padding:[20,20]}),
@@ -418,21 +418,20 @@ function NaverEngine(){
   let pills=[], ring=null;
   const clickFns=[];
   // phones send 'tap', computers send 'click' – listen to both, act once
-  let lastPick=0;
   const pick=e=>{
-    const now=Date.now(); if(now-lastPick<450) return; lastPick=now;
+    if(Date.now()-lastTap<700) return;
     const proj=layer.getProjection();
     if(proj&&e&&e.coord){
       const p=proj.fromCoordToOffset(e.coord);
       const best=hitTest(layer.dots,p.x-layer._ox,p.y-layer._oy);
-      if(best){ best.onClick(); return; }
+      if(best){ lastTap=Date.now(); best.onClick(); return; }
     }
     clickFns.forEach(f=>f(e));
   };
   nm.Event.addListener(map,'click',pick);
   nm.Event.addListener(map,'tap',pick);
   return {
-    name:'naver',
+    name:'naver', canvas:layer.c, items:()=>layer.dots,
     zoom:()=>map.getZoom(),
     setView:(la,lo,z)=>{ map.setZoom(z,false); map.setCenter(LL(la,lo)); },
     fit:()=>{
@@ -484,6 +483,23 @@ function startEngine(){
     document.head.appendChild(s);
   });
 }
+/* quick tap anywhere on the map: read the finger directly instead of relying on the map's own events */
+let lastTap=0;
+(function(){
+  const el=$('mapwrap'); let sx=0,sy=0,st=0,moved=false,multi=false,down=0;
+  el.addEventListener('pointerdown',e=>{ down++; if(down>1){multi=true;return;} sx=e.clientX; sy=e.clientY; st=Date.now(); moved=false; multi=false; },true);
+  el.addEventListener('pointermove',e=>{ if(Math.abs(e.clientX-sx)>10||Math.abs(e.clientY-sy)>10) moved=true; },true);
+  const end=e=>{
+    down=Math.max(0,down-1);
+    if(e.type!=='pointerup'||moved||multi||Date.now()-st>800||!M||!M.canvas) return;
+    const c=M.canvas.getBoundingClientRect();
+    const d=hitTest(M.items(),e.clientX-c.left,e.clientY-c.top);
+    if(d){ lastTap=Date.now(); d.onClick(); }
+  };
+  el.addEventListener('pointerup',end,true);
+  el.addEventListener('pointercancel',end,true);
+  el.addEventListener('touchend',e=>{ if(Date.now()-lastTap<300&&e.cancelable) e.preventDefault(); },{capture:true,passive:false});
+})();
 function wire(){ try{ if(myPos) M.me(myPos.lat,myPos.lon,myPos.acc); }catch(e){ console.error(e); } M.onZoom(draw); M.onClick(()=>{$('results').hidden=true}); }
 
 function radius(){const z=M.zoom();return z>=18?8:z>=17?6.5:z>=16?5:z>=15?4:3}
@@ -619,7 +635,7 @@ $('results').addEventListener('click',e=>{
 let current=null;
 function open(id){ if(current&&current!==id) $(current).classList.remove('on'); current=id; $(id).classList.add('on'); $(id).scrollTop=0; $('scrim').classList.add('on'); }
 function close(){ if(current) $(current).classList.remove('on'); current=null; $('scrim').classList.remove('on'); M&&M.clearRing(); }
-$('scrim').onclick=close;
+$('scrim').onclick=()=>{ if(Date.now()-lastTap<600) return; close(); }; // ignore the phone's extra click right after a tap
 document.addEventListener('click',e=>{if(e.target.closest('[data-close]'))close()});
 
 /* ---------- buttons ---------- */
