@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1f8a4c">
+<title>Hongdae Eats — Tourist Food Map</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+:root{
+  --green:#1f8a4c; --green-soft:#e3f3e9; --ink:#1b1f1d; --muted:#6b736f; --line:#e4e7e5;
+  --bg:#ffffff; --map-bg:#eef1ec; --radius:16px;
+  --shadow:0 4px 18px rgba(0,0,0,.12);
+  --safe-t:env(safe-area-inset-top,0px); --safe-b:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;color:var(--ink);background:var(--map-bg)}
+#mapwrap{position:fixed;inset:0}
+#map{width:100%;height:100%;background:var(--map-bg)}
+.leaflet-container{background:var(--map-bg);font-family:inherit}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+
+/* top bar */
+.top{position:fixed;left:0;right:0;top:0;padding:calc(10px + var(--safe-t)) 12px 0;z-index:1000;display:flex;gap:8px;align-items:center;pointer-events:none}
+.top>*{pointer-events:auto}
+.pill{background:var(--bg);box-shadow:var(--shadow);border-radius:999px;height:44px;display:flex;align-items:center}
+.area{padding:0 12px 0 14px;font-weight:650;gap:4px;white-space:nowrap}
+.area .dot{width:9px;height:9px;border-radius:50%;background:var(--green);margin-right:4px}
+.search{flex:1;min-width:0;padding:0 14px;gap:8px}
+.search input{border:0;outline:0;flex:1;min-width:0;font:inherit;font-size:16px;background:transparent}
+.icon-btn{width:44px;justify-content:center;position:relative;flex:none}
+.badge{position:absolute;top:-3px;right:-3px;min-width:18px;height:18px;border-radius:9px;background:var(--green);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 5px;border:2px solid #fff}
+.badge[hidden]{display:none}
+
+/* search results */
+.results{position:fixed;left:12px;right:12px;top:calc(62px + var(--safe-t));max-height:50vh;overflow:auto;background:var(--bg);border-radius:var(--radius);box-shadow:var(--shadow);z-index:1001}
+.results[hidden]{display:none}
+.res{display:flex;gap:10px;align-items:center;padding:11px 14px;border-bottom:1px solid var(--line);width:100%;text-align:left}
+.res:last-child{border-bottom:0}
+.res small{display:block;color:var(--muted);font-size:12.5px;margin-top:1px}
+.res .sw{width:10px;height:10px;border-radius:50%;flex:none}
+
+/* banner */
+.banner{position:fixed;left:50%;transform:translateX(-50%);top:calc(64px + var(--safe-t));z-index:999;background:rgba(27,31,29,.86);color:#fff;font-size:12.5px;padding:7px 12px;border-radius:999px;white-space:nowrap}
+.banner[hidden]{display:none}
+
+/* floating buttons */
+.fab{position:fixed;right:12px;bottom:calc(24px + var(--safe-b));z-index:999;display:flex;flex-direction:column;gap:8px}
+.fab button{width:44px;height:44px;border-radius:50%;background:var(--bg);box-shadow:var(--shadow);display:flex;align-items:center;justify-content:center}
+.count{position:fixed;left:12px;bottom:calc(24px + var(--safe-b));z-index:999;background:var(--bg);box-shadow:var(--shadow);border-radius:999px;padding:8px 13px;font-size:13px;color:var(--muted)}
+.count b{color:var(--ink)}
+
+/* sheets */
+.scrim{position:fixed;inset:0;background:rgba(0,0,0,.28);z-index:1100;opacity:0;pointer-events:none;transition:opacity .2s}
+.scrim.on{opacity:1;pointer-events:auto}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:1200;background:var(--bg);border-radius:20px 20px 0 0;box-shadow:0 -6px 24px rgba(0,0,0,.14);
+  max-height:86vh;overflow:auto;transform:translateY(105%);transition:transform .25s ease;padding:8px 18px calc(22px + var(--safe-b))}
+.sheet.on{transform:none}
+@media(min-width:700px){.sheet{left:50%;width:520px;margin-left:-260px}}
+.grab{width:38px;height:5px;border-radius:3px;background:#d6dad8;margin:4px auto 10px}
+.sheet h2{margin:2px 0 2px;font-size:22px;line-height:1.25}
+.sheet h3{font-size:13px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin:22px 0 8px}
+.sub{color:var(--muted);font-size:14px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.tag{display:inline-flex;align-items:center;gap:6px;font-size:13px;padding:5px 10px;border-radius:999px;background:#f2f4f3}
+.close{position:absolute;right:12px;top:12px;width:34px;height:34px;border-radius:50%;background:#f2f4f3;font-size:18px;line-height:34px;text-align:center}
+
+.rating{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:14px;color:var(--muted)}
+.stars{color:#d5d9d7;letter-spacing:1px;font-size:16px}
+
+.dir{display:grid;grid-template-columns:1fr;gap:8px;margin-top:16px}
+.dir a{display:flex;align-items:center;justify-content:center;gap:8px;height:48px;border-radius:12px;text-decoration:none;font-weight:650;font-size:15px}
+.dir .primary{background:#03c75a;color:#fff}
+.dir .alt{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.dir .alt a{background:#f2f4f3;color:var(--ink);font-weight:600;height:42px;font-size:14px}
+.hint{font-size:12px;color:var(--muted);margin-top:6px;text-align:center}
+
+.q{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);font-size:14.5px}
+.q:last-child{border-bottom:0}
+.q span:last-child{color:var(--muted);font-size:13px}
+.empty{background:var(--green-soft);border-radius:12px;padding:14px;font-size:14px;line-height:1.45}
+.cta{display:block;width:100%;margin-top:12px;height:48px;border-radius:12px;background:var(--ink);color:#fff;font-weight:650}
+.cta[disabled]{opacity:.45}
+
+/* filter sheet */
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{padding:8px 13px;border-radius:999px;border:1.5px solid var(--line);font-size:14px;display:inline-flex;align-items:center;gap:7px}
+.chip.on{border-color:var(--green);background:var(--green-soft);color:#0f5a30;font-weight:600}
+.chip .sw{width:9px;height:9px;border-radius:50%}
+.note{font-size:12.5px;color:var(--muted);margin-top:8px;line-height:1.4}
+.btns{display:flex;gap:10px;margin-top:22px}
+.btns button{flex:1;height:48px;border-radius:12px;font-weight:650}
+.btns .ghost{background:#f2f4f3}
+.btns .go{background:var(--green);color:#fff}
+
+/* area sheet */
+.area-item{display:flex;justify-content:space-between;align-items:center;padding:14px 2px;border-bottom:1px solid var(--line);width:100%;text-align:left;font-size:16px}
+.area-item.off{color:#a3aaa6}
+.area-item small{font-size:12px;background:#f2f4f3;color:var(--muted);padding:3px 8px;border-radius:999px}
+.area-item .live{background:var(--green-soft);color:#0f5a30}
+
+.stn{display:inline-block;background:#fff;border:2px solid var(--ink);border-radius:999px;font-size:11px;font-weight:700;padding:2px 7px;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,.2)}
+.attrib{font-size:11px}
+#locBtn.on{color:#2a7bf6}
+#nearSheet{max-height:52vh}
+.near{display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--line)}
+.near:last-child{border-bottom:0}
+.near-main{flex:1;display:flex;gap:10px;align-items:center;text-align:left;padding:12px 0;min-width:0}
+.near-main b{font-weight:600;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.near-main small{display:block;color:var(--muted);font-size:12.5px;margin-top:1px}
+.near-main .sw{width:12px;height:12px;border-radius:50%;flex:none}
+.near-rev{flex:none;height:34px;padding:0 14px;border-radius:999px;background:var(--green);color:#fff;font-weight:650;font-size:13.5px}
+
+.ring{transform:translate(-50%,-50%);border:3px solid #1f8a4c;border-radius:50%;box-sizing:border-box}
+.medot{transform:translate(-50%,-50%);width:16px;height:16px;border-radius:50%;background:#2a7bf6;border:3px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.3)}
+
+.top{flex-wrap:wrap}
+.top .search{order:1;flex:1 1 0}
+.top .acct{order:2}
+.top .brk{order:3;flex-basis:100%;height:0}
+.top .area{order:4;margin-right:auto}
+.top #filterBtn{order:5}
+.results{top:calc(62px + var(--safe-t))}
+.banner{top:calc(118px + var(--safe-t))}
+
+.acct{padding:0 14px;font-weight:650;font-size:14px;white-space:nowrap;flex:none;background:var(--green);color:#fff}
+.acct.in{padding:0;width:44px;justify-content:center;background:#fff}
+.area{padding:0 10px 0 12px}
+
+.tabs{display:flex;background:#f2f4f3;border-radius:12px;padding:4px;margin-top:14px}
+.tabs button{flex:1;height:38px;border-radius:9px;font-weight:600;color:var(--muted)}
+.tabs button.on{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.me{width:30px;height:30px;border-radius:50%;background:var(--green);color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center}
+.rev.pending{opacity:.75}
+.pend{background:#ffe9a8;color:#7a5a00!important;font-size:11px!important;font-weight:700;padding:2px 7px;border-radius:999px}
+
+.rev-h .teamtag{color:#fff!important;font-size:11px!important}
+.phpick{display:flex;flex-wrap:wrap;gap:8px}
+.thumb{position:relative;width:76px;height:76px;border-radius:10px;overflow:hidden;background:#f2f4f3}
+.thumb img{width:100%;height:100%;object-fit:cover}
+.thumb button{position:absolute;top:3px;right:3px;width:22px;height:22px;border-radius:50%;background:rgba(0,0,0,.6);color:#fff;font-size:14px;line-height:22px}
+.addph{width:76px;height:76px;border-radius:10px;border:1.5px dashed #c4cac7;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:11.5px;color:var(--muted);cursor:pointer}
+.addph span{font-size:22px;line-height:1;margin-bottom:2px}
+.ph{display:flex;gap:6px;margin-top:8px;overflow-x:auto}
+.ph img{width:92px;height:92px;object-fit:cover;border-radius:10px;flex:none;cursor:pointer}
+.viewer{position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.92);display:flex;align-items:center;justify-content:center}
+.viewer[hidden]{display:none}
+.viewer img{max-width:100%;max-height:100%}
+
+.seg{display:flex;gap:6px;margin-top:8px}
+.seg button{flex:1;height:38px;border-radius:10px;background:#f2f4f3;font-size:14px;font-weight:600;color:var(--muted)}
+.seg button.on{background:var(--ink);color:#fff}
+.fq{padding:12px 0;border-bottom:1px solid var(--line);font-size:15px}
+.fq.miss{background:#fff6f3}
+.starpick{display:flex;gap:6px;margin-top:6px}
+.starpick button{font-size:36px;line-height:1;color:#d5d9d7;padding:0 2px}
+.starpick button.on{color:#f5a623}
+.field{display:block;margin-top:12px;font-size:13px;color:var(--muted)}
+.field input,.field select,.field textarea{display:block;width:100%;margin-top:6px;border:1.5px solid var(--line);border-radius:10px;padding:11px 12px;font:inherit;font-size:16px;color:var(--ink);background:#fff}
+.field textarea{min-height:96px;resize:vertical}
+.err{color:#a23b1f;font-size:13.5px;margin-top:10px;min-height:1px}
+.ok{background:var(--green-soft);border-radius:12px;padding:18px;text-align:center;font-size:15px;line-height:1.5;margin-top:10px}
+.loading{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(76px + var(--safe-b));z-index:999;background:#fff;box-shadow:var(--shadow);border-radius:999px;padding:7px 13px;font-size:12.5px;color:var(--muted)}
+.loading[hidden]{display:none}
+
+.pin-wrap{background:none;border:0}
+.pin{transform:translate(-50%,-50%);display:inline-flex;align-items:center;gap:5px;white-space:nowrap;background:#fff;border:1.5px solid #d6dad8;border-radius:999px;padding:3px 8px 3px 7px;font-size:12px;font-weight:700;box-shadow:0 2px 6px rgba(0,0,0,.22);color:var(--ink)}
+.pin span{font-weight:600;color:var(--muted);background:#f2f4f3;border-radius:999px;padding:0 6px;font-size:11px;line-height:16px}
+.pin.team{background:#1f8a4c;color:#fff;border-color:#1f8a4c}.pin.team span{background:rgba(255,255,255,.22);color:#fff}
+.pin .tp{background:none!important;padding:0!important;color:#fff!important;font-size:12px!important}
+.pin.faded{opacity:.35}
+.stars i{font-style:normal;color:#d5d9d7}
+.stars.on{color:#f5a623}
+.teamtag{background:#1f8a4c;color:#fff;font-size:11.5px;font-weight:700;padding:2px 8px;border-radius:999px}
+.demo{background:#ffe9a8;color:#7a5a00;font-size:10.5px;font-weight:800;letter-spacing:.05em;padding:2px 6px;border-radius:6px}
+.ans{font-size:13px;font-weight:650;padding:3px 10px;border-radius:999px}
+.a-good{background:#e3f3e9;color:#0f5a30}.a-bad{background:#fde8e4;color:#a23b1f}.a-unsure{background:#f2f4f3;color:var(--muted)}
+.rev{padding:12px 0;border-bottom:1px solid var(--line)}
+.rev-h{display:flex;gap:10px;align-items:center}
+.rev-h>div{flex:1;font-size:14px}.rev-h>div span{color:var(--muted);font-size:13px}
+.rev-h small{display:block;color:var(--muted);font-size:12px;margin-top:1px}
+.ver{color:#1f8a4c!important;font-weight:650;font-size:12px!important}
+.av{width:34px;height:34px;border-radius:50%;background:var(--green-soft);color:#0f5a30;font-weight:700;display:flex;align-items:center;justify-content:center;flex:none}
+.rs{color:#f5a623;font-size:13px;letter-spacing:1px}.rs i{font-style:normal;color:#d5d9d7}
+.rev p{margin:8px 0 0;font-size:14.5px;line-height:1.45}
+.more{text-align:center;color:var(--green);font-weight:650;font-size:14px;padding:12px 0 2px}
+
+</style>
+</head>
+<body>
+<script src="data.js?v=1"></script>
+<div id="mapwrap"><div id="map"></div></div>
+
+<div class="top">
+  <button class="pill area" id="areaBtn"><span class="dot"></span>Hongdae<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m6 9 6 6 6-6"/></svg></button>
+  <label class="pill search"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6b736f" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="q" type="search" placeholder="Search restaurants" autocomplete="off"></label>
+  <button class="pill icon-btn" id="filterBtn" aria-label="Filters"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 6h16M7 12h10M10 18h4"/></svg><span class="badge" id="badge" hidden>0</span></button>
+  <div class="brk"></div>
+  <button class="pill acct" id="acctBtn" aria-label="Account"></button>
+</div>
+<div class="results" id="results" hidden></div>
+<div class="banner" id="banner" hidden>Preview mode · street map loads in the full app</div>
+
+<div class="count" id="count"></div>
+<div class="loading" id="loading">Loading reviews…</div>
+<div class="fab">
+  <button id="homeBtn" aria-label="Back to Hongdae"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 11 12 4l9 7v9h-6v-6H9v6H3z"/></svg></button>
+  <button id="locBtn" aria-label="My location"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="3.5"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="8"/></svg></button>
+</div>
+
+<div class="scrim" id="scrim"></div>
+<div class="sheet" id="placeSheet"></div>
+<div class="sheet" id="filterSheet"></div>
+<div class="sheet" id="areaSheet"></div>
+<div class="sheet" id="reviewSheet"></div>
+<div class="sheet" id="authSheet"></div>
+<div class="sheet" id="nearSheet"></div>
+<div class="viewer" id="viewer" hidden><img alt=""></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.js"></script>
+<script>
+const DATA = window.DATA;
+
+/* ---------- constants ---------- */
+const STATION = [37.55723, 126.92447];
+const CATS = {
+  korean:  {label:'Korean',        color:'#e4572e'},
+  bbq:     {label:'Korean BBQ',    color:'#a23b1f'},
+  japanese:{label:'Japanese',      color:'#3a6ea5'},
+  chinese: {label:'Chinese',       color:'#d4a017'},
+  western: {label:'Western',       color:'#7b5ea7'},
+  asian:   {label:'SE Asian',      color:'#2a9d8f'},
+  seafood: {label:'Seafood',       color:'#1d7fb8'},
+  quick:   {label:'Quick bites',   color:'#f08a24'},
+  pub:     {label:'Pub food',      color:'#5c6b73'},
+};
+const MUST = [['halal','Halal'],['veg','Vegetarian']];
+const NICE = [['solo','Solo friendly'],['english','English menu'],['cards','Foreign cards']];
+const QUESTIONS = ['Tourist friendly?','Can you eat alone?','Halal?','Vegetarian options?','English or picture menu?','Foreign cards accepted?','2-portion minimum?'];
+const AREAS = [['Hongdae',true],['Itaewon',false],['Myeongdong',false],['Seongsu',false],['Insadong',false],['Gangnam',false]];
+
+/* restaurants: [id,name,branch,cat,sub,addr,floor,lat,lon,dist,dong] */
+const R = DATA.r.map(a=>({id:a[0],name:a[1],branch:a[2],cat:a[3],sub:a[4],addr:a[5],floor:a[6],lat:a[7],lon:a[8],dist:a[9],dong:a[10]}));
+
+
+/* ================= REVIEWS (Supabase) ================= */
+const SUPABASE_URL = 'https://jevklanpqwzbwgftmhmg.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_fp6g9qnVdVLmsEhKUGNnow_AlDmvbWh';
+const Q = [['tourist','Tourist friendly?'],['solo','Can you eat alone?'],['halal','Halal?'],['veg','Vegetarian options?'],['english','English or picture menu?'],['cards','Foreign cards accepted?']];
+const ANS_LABEL={yes:'Yes',no:'No',unsure:'Not sure'};
+function ansClass(k,v){ if(v==='unsure') return 'a-unsure'; return v==='yes'?'a-good':'a-bad'; }
+function matches(r,key){ // filter key -> answer check
+  if(!r.rv) return false;
+  return r.rv.ans[key]==='yes';
+}
+
+/* ---------- saved preferences ---------- */
+const store = {
+  get(){try{return JSON.parse(localStorage.getItem('he_prefs')||'null')}catch(e){return null}},
+  set(v){try{localStorage.setItem('he_prefs',JSON.stringify(v))}catch(e){}}
+};
+let prefs = Object.assign({must:[],nice:[],cats:[]}, store.get()||{});
+
+const $ = id=>document.getElementById(id);
+/* ---------- map engines (Naver first, OpenStreetMap fallback) ---------- */
+const NAVER_KEY='76a379dlqz';
+const BND=(()=>{let s=90,w=180,n=-90,e=-180;for(const [la,lo] of DATA.b){s=Math.min(s,la);n=Math.max(n,la);w=Math.min(w,lo);e=Math.max(e,lo);}return {s,w,n,e};})();
+let M=null, selected=null;
+
+
+/* ---------- shared canvas painter: dots when zoomed out, round icons + names when zoomed in ---------- */
+const FORK=new Path2D('M11 9H9V2H7v7H5V2H3v7c0 2.12 1.66 3.84 3.75 3.97V22h2.5v-9.03C11.34 12.84 13 11.12 13 9V2h-2v7zm5-3v8h2.5v8H21V2c-2.76 0-5 2.24-5 4z');
+function rateColor(x){ return x>=4.3?'#f0b400': x>=3.5?'#f59a23': x>=2.5?'#ef6c2f':'#e5484d'; }
+function rr(g,x,y,w,h,r){ g.beginPath(); g.moveTo(x+r,y); g.arcTo(x+w,y,x+w,y+h,r); g.arcTo(x+w,y+h,x,y+h,r); g.arcTo(x,y+h,x,y,r); g.arcTo(x,y,x+w,y,r); g.closePath(); }
+function paint(g, items, xy, W, H){
+  const icons=[];
+  for(const d of items){
+    const [x,y]=xy(d); d._sx=x; d._sy=y; d._lb=null;
+    if(x<-40||y<-40||x>W+40||y>H+40){ d._on=false; continue; }
+    d._on=true;
+    if(d.mode==='icon'){ icons.push(d); continue; }
+    g.beginPath(); g.arc(x,y,d.r,0,Math.PI*2);
+    g.globalAlpha=d.fa; g.fillStyle=d.fill; g.fill();
+    if(d.sw){ g.globalAlpha=d.sa; g.lineWidth=d.sw; g.strokeStyle=d.stroke; g.stroke(); }
+  }
+  g.globalAlpha=1;
+  if(!icons.length) return;
+  // icons: reviewed / closer to the station first, so they win label space
+  icons.sort((a,b)=>a.prio-b.prio);
+  const R0=items.R0||12, taken=[], small=[];
+  const drawn=[];
+  for(const d of icons){
+    const x=d._sx,y=d._sy, gap=R0*2-2;
+    if(taken.some(([a,b])=>Math.abs(a-x)<gap&&Math.abs(b-y)<gap)){ small.push(d); continue; }
+    drawn.push(d); taken.push([x,y]);
+  }
+  for(const d of small){
+    g.globalAlpha=d.fa; g.beginPath(); g.arc(d._sx,d._sy,3.5,0,Math.PI*2); g.fillStyle=d.fill; g.fill();
+    g.lineWidth=1; g.strokeStyle='#fff'; g.stroke();
+  }
+  // circles (draw bottom-up so higher priority sits on top)
+  for(let i=drawn.length-1;i>=0;i--){
+    const d=drawn[i],x=d._sx,y=d._sy;
+    g.globalAlpha=d.fa;
+    g.beginPath(); g.arc(x,y+1.5,R0,0,Math.PI*2); g.fillStyle='rgba(0,0,0,.2)'; g.fill();
+    g.beginPath(); g.arc(x,y,R0,0,Math.PI*2); g.fillStyle=d.fill; g.fill();
+    g.lineWidth=2; g.strokeStyle='#fff'; g.stroke();
+    const k=R0/20; g.save(); g.translate(x-12*k,y-12*k); g.scale(k,k); g.fillStyle='#fff'; g.fill(FORK); g.restore();
+    if(d.team){ const bx=x+R0-2, by=y-R0+2; g.beginPath(); g.arc(bx,by,6,0,Math.PI*2); g.fillStyle='#1f8a4c'; g.fill(); g.lineWidth=1.5; g.strokeStyle='#fff'; g.stroke();
+      g.beginPath(); g.moveTo(bx-2.6,by+0.2); g.lineTo(bx-0.6,by+2.2); g.lineTo(bx+2.8,by-1.8); g.lineWidth=1.6; g.strokeStyle='#fff'; g.lineCap='round'; g.stroke(); }
+  }
+  // labels under the icon, skipped where they would overlap
+  g.font='600 11.5px -apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif';
+  g.textAlign='center'; g.textBaseline='top'; g.lineJoin='round';
+  const iconB=drawn.map(d=>[d._sx-R0,d._sy-R0,d._sx+R0,d._sy+R0]), labB=[];
+  const over=(bx,arr)=>arr.some(r=>!(bx[2]<r[0]||bx[0]>r[2]||bx[3]<r[1]||bx[1]>r[3]));
+  for(const d of drawn){
+    const txt=d.label; if(!txt) continue;
+    const w=g.measureText(txt).width, x=d._sx, y=d._sy, imp=d.prio<2e5;
+    const cands=[ {bx:[x-w/2-2,y+R0+1,x+w/2+2,y+R0+16], tx:x, ty:y+R0+2, al:'center'},
+                  {bx:[x+R0+2,y-8,x+R0+w+6,y+8], tx:x+R0+4, ty:y-7, al:'left'} ];
+    const c=cands.find(c=>!over(c.bx,labB)&&(imp||!over(c.bx,iconB.filter(r=>r[0]!==x-R0||r[1]!==y-R0))));
+    if(!c) continue;
+    labB.push(c.bx); d._lb=c.bx;
+    g.textAlign=c.al; g.globalAlpha=d.fa;
+    g.lineWidth=3.5; g.strokeStyle='#fff'; g.strokeText(txt,c.tx,c.ty);
+    g.fillStyle=d.lc||'#1b1f1d'; g.fillText(txt,c.tx,c.ty);
+  }
+  g.globalAlpha=1;
+}
+function hitTest(items,x,y){
+  let best=null,bd=1e9;
+  for(const d of items){
+    if(!d._on) continue;
+    if(d._lb&&x>=d._lb[0]-4&&x<=d._lb[2]+4&&y>=d._lb[1]-4&&y<=d._lb[3]+4) return d; // tapped the name
+    const lim=d.mode==='icon'?22:16; const dx=d._sx-x, dy=d._sy-y, dd=dx*dx+dy*dy;
+    if(dd<lim*lim&&dd<bd){bd=dd;best=d;}
+  }
+  return best;
+}
+
+function LeafletEngine(){
+  const el=$('map'); el.innerHTML='';
+  const map=L.map(el,{zoomControl:false,preferCanvas:true,minZoom:12,maxZoom:19,zoomAnimation:false,markerZoomAnimation:false}).setView([37.5565,126.9225],16);
+  map.attributionControl.setPrefix(false);
+  let tileFailed=false;
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'<span class="attrib">© OpenStreetMap contributors</span>'})
+   .on('tileerror',()=>{ if(!tileFailed){tileFailed=true;$('banner').hidden=false;setTimeout(()=>$('banner').hidden=true,6000)} }).addTo(map);
+  L.polygon(DATA.b,{color:'#1f8a4c',weight:3,fillColor:'#1f8a4c',fillOpacity:.07,interactive:false}).addTo(map);
+  map.setMaxBounds(L.latLngBounds([BND.s,BND.w],[BND.n,BND.e]).pad(1.5));
+  L.marker(STATION,{interactive:false,icon:L.divIcon({className:'',html:'<div class="stn">🚇 Hongik Univ.</div>',iconSize:[120,22],iconAnchor:[60,11]})}).addTo(map);
+  const pills=L.layerGroup().addTo(map);
+  const cv=document.createElement('canvas'); cv.style.cssText='position:absolute;left:0;top:0;pointer-events:none;z-index:450';
+  el.appendChild(cv);
+  let items=[], ring=null;
+  function repaint(){
+    const s=map.getSize(), dpr=window.devicePixelRatio||1;
+    cv.style.width=s.x+'px'; cv.style.height=s.y+'px'; cv.width=s.x*dpr; cv.height=s.y*dpr;
+    const g=cv.getContext('2d'); g.setTransform(dpr,0,0,dpr,0,0); g.clearRect(0,0,s.x,s.y);
+    paint(g,items,d=>{const p=map.latLngToContainerPoint([d.lat,d.lon]);return [p.x,p.y]},s.x,s.y);
+  }
+  map.on('move zoom resize viewreset',repaint);
+  const clickFns=[];
+  map.on('click',e=>{ const d=hitTest(items,e.containerPoint.x,e.containerPoint.y); if(d){ d.onClick(); return; } clickFns.forEach(f=>f(e)); });
+  return {
+    name:'osm',
+    zoom:()=>map.getZoom(),
+    setView:(la,lo,z)=>map.setView([la,lo],z),
+    fit:()=>map.fitBounds([[BND.s,BND.w],[BND.n,BND.e]],{padding:[20,20]}),
+    render(ds,ps){
+      items=ds; repaint(); pills.clearLayers();
+      for(const p of ps) L.marker([p.lat,p.lon],{icon:L.divIcon({className:'pin-wrap',html:p.html,iconSize:null}),zIndexOffset:p.z}).on('click',p.onClick).addTo(pills);
+    },
+    ring(la,lo,r){ this.clearRing(); ring=L.circleMarker([la,lo],{radius:r,color:'#1f8a4c',weight:3,fill:false,interactive:false}).addTo(map); },
+    clearRing(){ if(ring){map.removeLayer(ring);ring=null} },
+    me(la,lo,acc){
+      if(!this._me){ this._acc=L.circle([la,lo],{radius:acc||20,color:'#2a7bf6',weight:1,fillColor:'#2a7bf6',fillOpacity:.12,interactive:false}).addTo(map);
+        this._me=L.circleMarker([la,lo],{radius:8,color:'#fff',weight:3,fillColor:'#2a7bf6',fillOpacity:1,interactive:false}).addTo(map); }
+      else { this._me.setLatLng([la,lo]); this._acc.setLatLng([la,lo]).setRadius(acc||20); }
+    },
+    onZoom(fn){ map.on('zoomend',fn) },
+    onClick(fn){ clickFns.push(fn) },
+    destroy(){ map.remove() }
+  };
+}
+
+function NaverEngine(){
+  const nm=naver.maps, el=$('map'); el.innerHTML='';
+  const LL=(la,lo)=>new nm.LatLng(la,lo);
+  const map=new nm.Map(el,{center:LL(37.5565,126.9225),zoom:16,minZoom:12,maxZoom:19,
+    zoomControl:false,mapDataControl:false,scaleControl:false,logoControl:true,
+    logoControlOptions:{position:nm.Position.BOTTOM_LEFT}});
+  new nm.Polygon({map,paths:[DATA.b.map(([la,lo])=>LL(la,lo))],strokeColor:'#1f8a4c',strokeWeight:3,fillColor:'#1f8a4c',fillOpacity:.07,clickable:false});
+  new nm.Marker({map,position:LL(STATION[0],STATION[1]),clickable:false,zIndex:50,icon:{content:'<div class="stn" style="transform:translate(-50%,-50%)">🚇 Hongik Univ.</div>',anchor:new nm.Point(0,0)}});
+
+  // all restaurant dots on one canvas (fast for 3,000 points)
+  function DotLayer(){ this.c=document.createElement('canvas'); this.c.style.position='absolute'; this.c.style.pointerEvents='none'; this.dots=[]; }
+  DotLayer.prototype=new nm.OverlayView();
+  DotLayer.prototype.onAdd=function(){ this.getPanes().overlayLayer.appendChild(this.c); };
+  DotLayer.prototype.onRemove=function(){ this.c.remove(); };
+  DotLayer.prototype.draw=function(){
+    const m=this.getMap(), proj=this.getProjection(); if(!m||!proj) return;
+    const size=m.getSize(), bb=m.getBounds(), mn=bb.getMin(), mx=bb.getMax();
+    const nw=proj.fromCoordToOffset(LL(mx.y,mn.x));
+    const pad=Math.round(Math.max(size.width,size.height)*0.5), W=size.width+pad*2, H=size.height+pad*2, dpr=window.devicePixelRatio||1;
+    const ox=nw.x-pad, oy=nw.y-pad, c=this.c;
+    c.style.left=ox+'px'; c.style.top=oy+'px'; c.style.width=W+'px'; c.style.height=H+'px';
+    c.width=W*dpr; c.height=H*dpr;
+    const g=c.getContext('2d'); g.setTransform(dpr,0,0,dpr,0,0); g.clearRect(0,0,W,H);
+    paint(g,this.dots,d=>{const pt=proj.fromCoordToOffset(LL(d.lat,d.lon)); d._ox=pt.x; d._oy=pt.y; return [pt.x-ox,pt.y-oy];},W,H);
+    this._ox=ox; this._oy=oy;
+  };
+  const layer=new DotLayer(); layer.setMap(map);
+  nm.Event.addListener(map,'idle',()=>layer.draw());
+  nm.Event.addListener(map,'zoom_changed',()=>layer.draw());
+
+  let pills=[], ring=null;
+  const clickFns=[];
+  // phones send 'tap', computers send 'click' – listen to both, act once
+  let lastPick=0;
+  const pick=e=>{
+    const now=Date.now(); if(now-lastPick<450) return; lastPick=now;
+    const proj=layer.getProjection();
+    if(proj&&e&&e.coord){
+      const p=proj.fromCoordToOffset(e.coord);
+      const best=hitTest(layer.dots,p.x-layer._ox,p.y-layer._oy);
+      if(best){ best.onClick(); return; }
+    }
+    clickFns.forEach(f=>f(e));
+  };
+  nm.Event.addListener(map,'click',pick);
+  nm.Event.addListener(map,'tap',pick);
+  return {
+    name:'naver',
+    zoom:()=>map.getZoom(),
+    setView:(la,lo,z)=>{ map.setZoom(z,false); map.setCenter(LL(la,lo)); },
+    fit:()=>{
+      const s=map.getSize(), W=s.width-30, H=s.height-260, my=la=>Math.log(Math.tan(Math.PI/4+la*Math.PI/360));
+      const zx=Math.log2(W*360/(256*(BND.e-BND.w))), zy=Math.log2(H*2*Math.PI/(256*(my(BND.n)-my(BND.s))));
+      map.setZoom(Math.max(12,Math.min(19,Math.round(Math.min(zx,zy)))),false); map.setCenter(LL((BND.s+BND.n)/2-0.0015,(BND.w+BND.e)/2));
+    },
+    render(ds,ps){
+      layer.dots=ds; layer.draw();
+      pills.forEach(m=>m.setMap(null)); pills=[];
+      for(const p of ps){
+        const mk=new nm.Marker({map,position:LL(p.lat,p.lon),zIndex:p.z,icon:{content:p.html,anchor:new nm.Point(0,0)}});
+        nm.Event.addListener(mk,'click',p.onClick); pills.push(mk);
+      }
+    },
+    ring(la,lo,r){ this.clearRing(); ring=new nm.Marker({map,position:LL(la,lo),clickable:false,zIndex:2000,icon:{content:`<div class="ring" style="width:${r*2}px;height:${r*2}px"></div>`,anchor:new nm.Point(0,0)}}); },
+    clearRing(){ if(ring){ring.setMap(null);ring=null} },
+    me(la,lo,acc){
+      if(!this._me){ this._acc=new nm.Circle({map,center:LL(la,lo),radius:acc||20,strokeColor:'#2a7bf6',strokeWeight:1,fillColor:'#2a7bf6',fillOpacity:.12,clickable:false});
+        this._me=new nm.Marker({map,position:LL(la,lo),clickable:false,zIndex:3000,icon:{content:'<div class="medot"></div>',anchor:new nm.Point(0,0)}}); }
+      else { this._me.setPosition(LL(la,lo)); this._acc.setCenter(LL(la,lo)); this._acc.setRadius(acc||20); }
+    },
+    onZoom(fn){ nm.Event.addListener(map,'zoom_changed',fn) },
+    onClick(fn){ clickFns.push(fn) },
+    destroy(){ try{map.destroy()}catch(e){} }
+  };
+}
+
+function startEngine(){
+  return new Promise(resolve=>{
+    let done=false;
+    const fallback=()=>{ if(done&&M&&M.name==='osm') return; if(M){M.destroy();} M=LeafletEngine(); wire(); if(!done){done=true;resolve();} else { draw(); M.fit(); } };
+    window.navermap_authFailure=()=>{ console.warn('Naver Maps auth failed, using OpenStreetMap'); fallback(); };
+    const timer=setTimeout(()=>{ if(!done) fallback(); },7000);
+    const s=document.createElement('script');
+    s.src=`https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=${NAVER_KEY}&callback=__naverReady`;
+    s.onerror=()=>{ clearTimeout(timer); fallback(); };
+    window.__naverReady=()=>{
+      // Naver calls this a moment before window.naver exists, so wait for it
+      let tries=0;
+      const go=()=>{
+        if(done) return;
+        if(!(window.naver&&window.naver.maps&&window.naver.maps.Map)){ if(++tries<100) return setTimeout(go,50); clearTimeout(timer); return fallback(); }
+        clearTimeout(timer);
+        try{ M=NaverEngine(); wire(); done=true; resolve(); }catch(e){ console.error(e); fallback(); }
+      };
+      go();
+    };
+    document.head.appendChild(s);
+  });
+}
+function wire(){ try{ if(myPos) M.me(myPos.lat,myPos.lon,myPos.acc); }catch(e){ console.error(e); } M.onZoom(draw); M.onClick(()=>{$('results').hidden=true}); }
+
+function radius(){const z=M.zoom();return z>=18?8:z>=17?6.5:z>=16?5:z>=15?4:3}
+function visible(r){
+  if(prefs.cats.length && !prefs.cats.includes(r.cat)) return false;
+  for(const k of prefs.must) if(!matches(r,k)) return false;
+  return true;
+}
+function faded(r){ return prefs.nice.some(k=>!matches(r,k)); }
+
+function draw(){
+  if(!M) return;
+  const ds=[], ps=[]; let n=0, rev=0; const rad=radius(), z=M.zoom(), big=z>=17;
+  for(const r of R){
+    if(!visible(r)) continue; n++;
+    const f=faded(r), onClick=()=>openPlace(r);
+    if(r.rv) rev++;
+    if(big){
+      ds.push({lat:r.lat,lon:r.lon,mode:'icon',onClick,fa:f?.35:1,
+        fill:r.rv?rateColor(r.rv.rating):'#8a938f', team:!!(r.rv&&r.rv.team),
+        label:r.rv?`${r.name} ★${r.rv.rating.toFixed(1)}`:r.name, lc:'#1b1f1d',
+        prio:(r.rv?(r.rv.team?0:1e5):2e5)+r.dist});
+      continue;
+    }
+    if(r.rv){ ds.push({lat:r.lat,lon:r.lon,mode:'dot',r:rad+1.5,fill:rateColor(r.rv.rating),fa:f?.25:1,stroke:'#fff',sw:2,sa:f?.3:1,onClick}); continue; }
+    ds.push({lat:r.lat,lon:r.lon,mode:'dot',r:Math.max(2.5,rad-1),fill:'#9aa39e',fa:f?.25:.85,stroke:'#fff',sw:1,sa:f?.3:1,onClick});
+  }
+  ds.sort((a,b)=>(a.sw===2)-(b.sw===2));
+  ds.R0 = z>=18?12:10;
+  M.render(ds,ps);
+  $('count').innerHTML=`<b>${n.toLocaleString()}</b> restaurants · <b>${rev}</b> reviewed`;
+}
+
+/* ---------- place sheet ---------- */
+const esc = s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function links(r){
+  const q=encodeURIComponent(r.name+' '+r.addr.replace(/\s*\d+층.*$/,''));
+  return {
+    naver:`https://map.naver.com/p/search/${q}`,
+    kakao:`https://map.kakao.com/link/to/${encodeURIComponent(r.name)},${r.lat},${r.lon}`,
+    google:`https://www.google.com/maps/dir/?api=1&destination=${r.lat},${r.lon}&travelmode=walking`
+  };
+}
+function stars(x){const f=Math.round(x);return '★'.repeat(f)+'<i>'+'★'.repeat(5-f)+'</i>'}
+function walk(m){const min=Math.max(1,Math.round(m*1.3/80));return `${min} min walk from Hongik Univ. Stn`}
+function openPlace(r){
+  const l=links(r), c=CATS[r.cat];
+  $('placeSheet').innerHTML=`
+    <div class="grab"></div><button class="close" data-close>×</button>
+    <h2>${esc(r.name)}${r.branch?` <span class="sub">${esc(r.branch)}</span>`:''}</h2>
+    <div class="row" style="margin-top:6px">
+      <span class="tag">${esc(r.sub)}</span>
+      <span class="tag">${esc(r.dong)}</span>
+    </div>
+    ${r.rv?`<div class="rating"><span class="stars on">${stars(r.rv.rating)}</span><b style="color:var(--ink)">${r.rv.rating.toFixed(1)}</b> · ${r.rv.count} review${r.rv.count>1?'s':''}${r.rv.team?' <span class="teamtag">✓ Team pick</span>':''}</div>`:`<div class="rating"><span class="stars">★★★★★</span>No reviews yet</div>`}
+    <div class="dir">
+      <a class="primary" href="${l.naver}" target="_blank" rel="noopener">Go with Naver Map</a>
+      <div class="alt">
+        <a href="${l.kakao}" target="_blank" rel="noopener">Kakao Map</a>
+        <a href="${l.google}" target="_blank" rel="noopener">Google Maps</a>
+      </div>
+      <div class="hint">Naver gives the most accurate directions in Korea · ${walk(r.dist)}</div>
+    </div>
+    <h3>What tourists say</h3>
+    ${Q.map(([k,q])=>`<div class="q"><span>${q}</span>${r.rv?`<span class="ans ${ansClass(k,r.rv.ans[k])}">${ANS_LABEL[r.rv.ans[k]]}</span>`:'<span>No answers yet</span>'}</div>`).join('')}
+    <h3>Menu</h3>
+    <div class="empty">Menu coming soon.</div>
+    <h3>Reviews</h3>
+    ${(r.mine&&r.mine.length)?r.mine.map(v=>`<div class="rev pending"><div class="rev-h"><span class="av">${esc(v.who[0])}</span><div><b>${esc(v.who)}</b> <span class="pend">Waiting for approval</span><small>Only you can see this · ${v.date}</small></div><span class="rs">${'★'.repeat(v.stars)}<i>${'★'.repeat(5-v.stars)}</i></span></div>${v.text?`<p>${esc(v.text)}</p>`:''}</div>`).join(''):''}
+    ${r.rv?(r._all?r.rv.reviews:r.rv.reviews.slice(0,4)).map(v=>`<div class="rev"><div class="rev-h"><span class="av">${esc(v.who[0]||'?')}</span><div><b>${esc(v.who)}</b>${v.team?' <span class="teamtag">Team</span>':''} <span>${v.flag} ${esc(v.country)}</span><small>${v.date}</small></div><span class="rs">${'★'.repeat(v.stars)}<i>${'★'.repeat(5-v.stars)}</i></span></div>${v.text?`<p>${esc(v.text)}</p>`:''}${v.photos.length?`<div class="ph">${v.photos.map(u=>`<img src="${esc(u)}" loading="lazy" data-full="${esc(u)}" alt="">`).join('')}</div>`:''}</div>`).join('')+(!r._all&&r.rv.reviews.length>4?`<button class="more" data-all="${r.id}" style="width:100%">See all ${r.rv.count} reviews</button>`:''):((r.mine&&r.mine.length)?'':'<div class="empty">No tourist has reviewed this place yet. Been here? Your review helps the next traveler.</div>')}
+    <button class="cta" data-review="${r.id}">Write a review</button>
+    <h3>Address</h3>
+    <div class="sub" style="font-size:14px;line-height:1.5">${esc(r.addr)}${r.floor&&r.floor!=='1'?` · Floor ${esc(r.floor)}`:''}</div>
+  `;
+  open('placeSheet');
+  M&&M.ring(r.lat,r.lon,M.zoom()>=17?17:radius()+6);
+  selected=r;
+}
+
+/* ---------- filter sheet ---------- */
+let draft=null;
+function renderFilters(){
+  const chip=(group,key,label,sw)=>`<button class="chip ${draft[group].includes(key)?'on':''}" data-g="${group}" data-k="${key}">${sw?`<span class="sw" style="background:${sw}"></span>`:''}${label}</button>`;
+  $('filterSheet').innerHTML=`
+    <div class="grab"></div><button class="close" data-close>×</button>
+    <h2>Filters</h2>
+    <h3>Must have</h3>
+    <div class="chips">${MUST.map(([k,l])=>chip('must',k,l)).join('')}</div>
+    <div class="note">Places that don't match are hidden.</div>
+    <h3>Nice to have</h3>
+    <div class="chips">${NICE.map(([k,l])=>chip('nice',k,l)).join('')}</div>
+    <div class="note">Places that don't match are faded.</div>
+    <div class="empty" style="margin-top:12px;font-size:13px${R.some(r=>r.rv)?';display:none':''}">These preferences are saved and will apply as soon as tourists start answering the questions for each restaurant.</div>
+    <h3>Food type</h3>
+    <div class="chips">${Object.entries(CATS).map(([k,c])=>chip('cats',k,c.label)).join('')}</div>
+    <div class="btns"><button class="ghost" id="clearF">Clear all</button><button class="go" id="applyF">Show results</button></div>`;
+}
+function badge(){const n=prefs.must.length+prefs.nice.length+prefs.cats.length;$('badge').hidden=!n;$('badge').textContent=n}
+$('filterBtn').onclick=()=>{draft=JSON.parse(JSON.stringify(prefs));renderFilters();open('filterSheet')};
+$('filterSheet').addEventListener('click',e=>{
+  const b=e.target.closest('.chip');
+  if(b){const a=draft[b.dataset.g],k=b.dataset.k,i=a.indexOf(k);i<0?a.push(k):a.splice(i,1);renderFilters();return}
+  if(e.target.id==='clearF'){draft={must:[],nice:[],cats:[]};renderFilters()}
+  if(e.target.id==='applyF'){prefs=draft;store.set(prefs);badge();draw();close()}
+});
+
+/* ---------- area sheet ---------- */
+$('areaBtn').onclick=()=>{
+  $('areaSheet').innerHTML=`<div class="grab"></div><button class="close" data-close>×</button><h2>Choose an area</h2><div style="margin-top:10px">`+
+   AREAS.map(([n,on])=>`<button class="area-item ${on?'':'off'}" ${on?'data-home':''}>${n}<small class="${on?'live':''}">${on?`${R.length.toLocaleString()} places`:'Coming soon'}</small></button>`).join('')+`</div>`;
+  open('areaSheet');
+};
+$('areaSheet').addEventListener('click',e=>{if(e.target.closest('[data-home]')){close();home()}});
+
+/* ---------- search ---------- */
+$('q').addEventListener('input',e=>{
+  const v=e.target.value.trim().toLowerCase();
+  if(!v){$('results').hidden=true;return}
+  const hits=R.filter(r=>r.name.toLowerCase().includes(v)||r.sub.toLowerCase().includes(v)||CATS[r.cat].label.toLowerCase().includes(v))
+              .sort((a,b)=>a.dist-b.dist).slice(0,30);
+  $('results').innerHTML=hits.length?hits.map(r=>`<button class="res" data-id="${r.id}"><span class="sw" style="background:${r.rv?rateColor(r.rv.rating):'#c4cac7'}"></span><span>${esc(r.name)}<small>${esc(r.sub)} · ${esc(r.dong)}</small></span></button>`).join('')
+    :`<div class="res" style="color:var(--muted)">No matches. Try "ramen", "bbq" or a Korean name.</div>`;
+  $('results').hidden=false;
+});
+$('results').addEventListener('click',e=>{
+  const b=e.target.closest('[data-id]'); if(!b) return;
+  const r=R.find(x=>x.id===b.dataset.id);
+  $('results').hidden=true; $('q').blur();
+  M&&M.setView(r.lat,r.lon,18); openPlace(r);
+});
+
+/* ---------- sheets ---------- */
+let current=null;
+function open(id){ if(current&&current!==id) $(current).classList.remove('on'); current=id; $(id).classList.add('on'); $(id).scrollTop=0; $('scrim').classList.add('on'); }
+function close(){ if(current) $(current).classList.remove('on'); current=null; $('scrim').classList.remove('on'); M&&M.clearRing(); }
+$('scrim').onclick=close;
+document.addEventListener('click',e=>{if(e.target.closest('[data-close]'))close()});
+
+/* ---------- buttons ---------- */
+function home(){ M&&M.fit(); }
+$('homeBtn').onclick=home;
+/* ---------- my location ---------- */
+let myPos=null, watching=false, wantJump=false;
+function distM(a,b,c,d){const R=6371000,p1=a*Math.PI/180,p2=c*Math.PI/180,dl=(d-b)*Math.PI/180,dp=p2-p1;const h=Math.sin(dp/2)**2+Math.cos(p1)*Math.cos(p2)*Math.sin(dl/2)**2;return 2*R*Math.asin(Math.sqrt(h));}
+function inHongdae(p){ return distM(p.lat,p.lon,STATION[0],STATION[1])<3000; }
+function startWatch(){
+  if(watching) return; watching=true;
+  try{
+    navigator.geolocation.watchPosition(p=>{
+      myPos={lat:p.coords.latitude,lon:p.coords.longitude,acc:Math.min(p.coords.accuracy||30,200)};
+      M&&M.me(myPos.lat,myPos.lon,myPos.acc);
+      $('locBtn').classList.add('on');
+      if(wantJump){ wantJump=false; jumpToMe(); }
+    },err=>{ watching=false; $('locBtn').classList.remove('on');
+      if(wantJump){ wantJump=false; flash(err.code===1?'Allow location access in your browser settings to see where you are':'Could not find your location'); } },
+    {enableHighAccuracy:true,maximumAge:10000,timeout:20000});
+  }catch(e){ watching=false; flash('Location is not available here'); }
+}
+function jumpToMe(){
+  if(!myPos||!M) return;
+  if(!inHongdae(myPos)){ flash("You're not in Hongdae right now"); return; }
+  M.setView(myPos.lat-0.0007,myPos.lon,18);
+  showNearby();
+}
+function showNearby(){
+  const near=R.map(r=>({r,d:distM(myPos.lat,myPos.lon,r.lat,r.lon)})).filter(x=>x.d<250).sort((a,b)=>a.d-b.d).slice(0,8);
+  $('nearSheet').innerHTML=`<div class="grab"></div><button class="close" data-close>×</button>
+    <h2>Near you</h2><div class="sub">Tap a place to see it, or review where you are now.</div>
+    ${near.length?near.map(({r,d})=>`<div class="near"><button class="near-main" data-open="${r.id}"><span class="sw" style="background:${r.rv?rateColor(r.rv.rating):'#8a938f'}"></span><span><b>${esc(r.name)}</b><small>${esc(r.sub)} · ${Math.round(d)} m</small></span></button><button class="near-rev" data-review="${r.id}">Review</button></div>`).join('')
+      :'<div class="empty" style="margin-top:12px">No restaurants within 250 m.</div>'}`;
+  open('nearSheet');
+}
+$('locBtn').onclick=()=>{
+  if(myPos){ jumpToMe(); return; }
+  wantJump=true; startWatch();
+};
+$('nearSheet').addEventListener('click',e=>{ const o=e.target.closest('[data-open]'); if(o){ const r=byId[o.dataset.open]; M.setView(r.lat,r.lon,18); openPlace(r); } });
+// show the blue dot right away when the visitor already allowed location
+try{ navigator.permissions&&navigator.permissions.query({name:'geolocation'}).then(s=>{ if(s.state==='granted') startWatch(); }).catch(()=>{}); }catch(e){}
+function flash(t){const b=$('banner');b.textContent=t;b.hidden=false;setTimeout(()=>b.hidden=true,3000)}
+
+
+/* ---------- reviews: load, aggregate, write ---------- */
+const COUNTRIES=[['🇹🇷','Turkey'],['🇺🇸','USA'],['🇬🇧','UK'],['🇩🇪','Germany'],['🇫🇷','France'],['🇮🇹','Italy'],['🇪🇸','Spain'],['🇳🇱','Netherlands'],['🇸🇪','Sweden'],['🇷🇺','Russia'],['🇺🇦','Ukraine'],['🇵🇱','Poland'],['🇨🇦','Canada'],['🇦🇺','Australia'],['🇧🇷','Brazil'],['🇲🇽','Mexico'],['🇯🇵','Japan'],['🇨🇳','China'],['🇹🇼','Taiwan'],['🇭🇰','Hong Kong'],['🇻🇳','Vietnam'],['🇹🇭','Thailand'],['🇵🇭','Philippines'],['🇮🇩','Indonesia'],['🇲🇾','Malaysia'],['🇸🇬','Singapore'],['🇮🇳','India'],['🇵🇰','Pakistan'],['🇧🇩','Bangladesh'],['🇺🇿','Uzbekistan'],['🇰🇿','Kazakhstan'],['🇦🇿','Azerbaijan'],['🇸🇦','Saudi Arabia'],['🇦🇪','UAE'],['🇪🇬','Egypt'],['🇲🇦','Morocco'],['🇳🇬','Nigeria'],['🇿🇦','South Africa'],['🇰🇷','Korea'],['🌍','Other']];
+const FLAG=Object.fromEntries(COUNTRIES.map(([f,n])=>[n,f]));
+const byId=Object.fromEntries(R.map(r=>[r.id,r]));
+let ROWS=[];
+const sb = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {auth:{persistSession:true,autoRefreshToken:true}}) : null;
+const fmtDate=s=>{try{return new Date(s).toLocaleDateString('en-US',{month:'short',year:'numeric'})}catch(e){return ''}};
+
+function toView(x){
+  const name=(x.profiles&&x.profiles.username)||x.author_name||'Traveler', c=(x.profiles&&x.profiles.country)||x.country||'';
+  return {who:name,flag:FLAG[c]||'🌍',country:c,date:fmtDate(x.created_at),stars:x.rating,text:x.body||'',team:x.is_team,photos:x.photos||[],pending:!x.approved};
+}
+function aggregate(){
+  for(const r of R){ delete r.rv; r.mine=[]; }
+  const groups={};
+  for(const row of ROWS){
+    if(!row.approved){ if(byId[row.restaurant_id]) byId[row.restaurant_id].mine.push(toView(row)); continue; }
+    (groups[row.restaurant_id]=groups[row.restaurant_id]||[]).push(row);
+  }
+  for(const [id,rows] of Object.entries(groups)){
+    const r=byId[id]; if(!r) continue;
+    const ans={};
+    for(const [k] of Q){
+      let y=0,n=0; for(const x of rows){ if(x[k]==='yes')y++; else if(x[k]==='no')n++; }
+      ans[k]= y>n?'yes': n>y?'no':'unsure';
+    }
+    const avg=rows.reduce((s,x)=>s+x.rating,0)/rows.length;
+    r.rv={rating:Math.round(avg*10)/10,count:rows.length,ans,team:rows.some(x=>x.is_team),
+      reviews:rows.map(toView)};
+  }
+}
+async function loadReviews(){
+  if(!sb){ $('loading').hidden=true; return; }
+  const timer=setTimeout(()=>{$('loading').textContent='Reviews are taking long to load…'},8000);
+  try{
+    const {data,error}=await sb.from('reviews').select('*, profiles(username,country)').order('created_at',{ascending:false}).limit(5000);
+    if(error) throw error;
+    ROWS=data||[]; aggregate(); draw();
+    $('loading').hidden=true;
+  }catch(e){ $('loading').textContent='Reviews could not be loaded'; setTimeout(()=>$('loading').hidden=true,4000); }
+  finally{clearTimeout(timer)}
+}
+
+
+/* ---------- accounts ---------- */
+let session=null, profile=null, afterLogin=null, auth={mode:'signup',err:'',busy:false,email:'',username:'',country:''};
+async function loadProfile(){
+  profile=null;
+  if(!session) return;
+  const {data}=await sb.from('profiles').select('*').eq('id',session.user.id).maybeSingle();
+  profile=data||null;
+}
+function acctIcon(){ const b=$('acctBtn'); b.classList.toggle('in',!!profile); b.innerHTML = profile ? `<span class="me">${esc(profile.username[0].toUpperCase())}</span>` : 'Sign up'; }
+function openAuth(mode,msg){ auth.mode=mode||auth.mode; auth.err=''; auth.msg=msg||''; renderAuth(); open('authSheet'); }
+function countrySelect(id,val){ return `<select id="${id}"><option value="">Choose…</option>${COUNTRIES.map(([fl,n])=>`<option value="${n}" ${val===n?'selected':''}>${fl} ${n}</option>`).join('')}</select>`; }
+function renderAuth(){
+  const a=auth, el=$('authSheet');
+  if(session&&profile){
+    el.innerHTML=`<div class="grab"></div><button class="close" data-close>×</button><h2>${esc(profile.username)}</h2><div class="sub">${FLAG[profile.country]||'🌍'} ${esc(profile.country)} · ${esc(session.user.email||'')}</div>
+      <button class="cta" id="aOut" style="background:#f2f4f3;color:var(--ink);margin-top:22px">Log out</button>`; return;
+  }
+  if(session&&!profile){
+    el.innerHTML=`<div class="grab"></div><button class="close" data-close>×</button><h2>Almost done</h2><div class="sub">Pick a username and your country. They are shown on your reviews.</div>
+      <label class="field">Username<input id="aUser" maxlength="20" autocapitalize="off" value="${esc(a.username)}" placeholder="e.g. emma_travels"></label>
+      <label class="field">Where are you from?${countrySelect('aCountry',a.country)}</label>
+      <div class="err">${esc(a.err)}</div><button class="cta" id="aProfile" style="background:var(--green)" ${a.busy?'disabled':''}>Save</button>`; return;
+  }
+  const up=a.mode==='signup';
+  el.innerHTML=`<div class="grab"></div><button class="close" data-close>×</button>
+    ${a.msg?`<div class="empty" style="margin-bottom:10px">${esc(a.msg)}</div>`:''}
+    <h2>${up?'Create your account':'Welcome back'}</h2>
+    <div class="tabs"><button data-mode="signup" class="${up?'on':''}">Sign up</button><button data-mode="login" class="${up?'':'on'}">Log in</button></div>
+    ${up?`<label class="field">Username<input id="aUser" maxlength="20" autocapitalize="off" value="${esc(a.username)}" placeholder="e.g. emma_travels"></label>
+    <label class="field">Where are you from?${countrySelect('aCountry',a.country)}</label>`:''}
+    <label class="field">Email<input id="aEmail" type="email" autocapitalize="off" value="${esc(a.email)}"></label>
+    <label class="field">Password${up?' (at least 6 characters)':''}<input id="aPass" type="password"></label>
+    <div class="err">${esc(a.err)}</div>
+    <button class="cta" id="aGo" style="background:var(--green)" ${a.busy?'disabled':''}>${a.busy?'Please wait…':up?'Create account':'Log in'}</button>`;
+}
+function readAuth(){ if($('aEmail')) auth.email=$('aEmail').value.trim(); if($('aUser')) auth.username=$('aUser').value.trim(); if($('aCountry')) auth.country=$('aCountry').value; }
+function checkProfileFields(){
+  if(!/^[A-Za-z0-9_.]{3,20}$/.test(auth.username)) return 'Username: 3–20 letters, numbers, _ or .';
+  if(!auth.country) return 'Please choose your country.';
+  return '';
+}
+async function saveProfile(){
+  const {data,error}=await sb.from('profiles').insert({id:session.user.id,username:auth.username,country:auth.country}).select().single();
+  if(error){ return error.code==='23505'?'That username is taken. Try another one.':'Could not save your profile. Try again.'; }
+  profile=data; return '';
+}
+async function finishLogin(){
+  acctIcon(); await loadReviews();
+  if(profile && afterLogin){ const f=afterLogin; afterLogin=null; f(); } else if(profile){ close(); }
+}
+$('authSheet').addEventListener('click',async e=>{
+  const m=e.target.closest('[data-mode]'); if(m){ readAuth(); auth.mode=m.dataset.mode; auth.err=''; renderAuth(); return; }
+  if(e.target.id==='aOut'){ await sb.auth.signOut(); session=null; profile=null; acctIcon(); close(); loadReviews(); return; }
+  if(e.target.id==='aProfile'){
+    readAuth(); auth.err=checkProfileFields(); if(auth.err){ renderAuth(); return; }
+    auth.busy=true; renderAuth(); auth.err=await saveProfile(); auth.busy=false; renderAuth();
+    if(!auth.err) finishLogin(); return;
+  }
+  if(e.target.id!=='aGo'||auth.busy) return;
+  readAuth(); const pass=$('aPass').value;
+  if(auth.mode==='signup'){ auth.err=checkProfileFields(); if(!auth.err&&pass.length<6) auth.err='Password must be at least 6 characters.'; }
+  if(!auth.err&&!/^\S+@\S+\.\S+$/.test(auth.email)) auth.err='Please enter a valid email.';
+  if(auth.err){ renderAuth(); return; }
+  auth.busy=true; renderAuth();
+  try{
+    if(auth.mode==='signup'){
+      const {data,error}=await sb.auth.signUp({email:auth.email,password:pass});
+      if(error) throw error;
+      if(!data.session){ auth.busy=false; auth.msg='Check your email and tap the link to confirm your account, then log in here.'; auth.mode='login'; renderAuth(); return; }
+      session=data.session; auth.err=await saveProfile();
+    }else{
+      const {data,error}=await sb.auth.signInWithPassword({email:auth.email,password:pass});
+      if(error) throw error;
+      session=data.session; await loadProfile();
+    }
+  }catch(err){ console.error(err); auth.err = /already registered/i.test(err.message||'')?'This email already has an account. Log in instead.': /invalid login/i.test(err.message||'')?'Wrong email or password.': (err.message||'Something went wrong. Try again.'); }
+  auth.busy=false; renderAuth();
+  if(session&&profile&&!auth.err) finishLogin();
+});
+$('acctBtn').onclick=()=>openAuth(session?null:'signup');
+async function initAuth(){
+  if(!sb) return;
+  const {data}=await sb.auth.getSession(); session=data.session; await loadProfile(); acctIcon();
+}
+
+const me={get(){try{return JSON.parse(localStorage.getItem('he_me')||'{}')}catch(e){return {}}},set(v){try{localStorage.setItem('he_me',JSON.stringify(v))}catch(e){}}};
+let form=null;
+function openReview(r){
+  if(!sb) return;
+  if(!session||!profile){ afterLogin=()=>openReview(r); openAuth(session?null:'signup','Create a free account to write reviews. Your username and country are shown on your reviews.'); return; }
+  form={r,rating:0,ans:{},photos:[],body:'',sending:false,done:false,err:''};
+  renderReview(); open('reviewSheet');
+}
+function renderReview(){
+  const f=form,r=f.r;
+  if(f.done){
+    $('reviewSheet').innerHTML=`<div class="grab"></div><button class="close" data-close>×</button><h2>Thank you!</h2><div class="ok">Your review of <b>${esc(r.name)}</b> was sent.<br>It will appear on the map after it is approved, usually within a day.</div><button class="cta" data-back="${r.id}">Back to ${esc(r.name)}</button>`;
+    return;
+  }
+  $('reviewSheet').innerHTML=`<div class="grab"></div><button class="close" data-close>×</button>
+    <div class="sub">Review</div><h2>${esc(r.name)}</h2>
+    <h3>Your rating</h3>
+    <div class="starpick">${[1,2,3,4,5].map(i=>`<button data-star="${i}" class="${i<=f.rating?'on':''}" aria-label="${i} stars">★</button>`).join('')}</div>
+    <h3>Quick questions</h3>
+    ${Q.map(([k,q])=>`<div class="fq ${f.err&&!f.ans[k]?'miss':''}">${q}<div class="seg">${['yes','no','unsure'].map(v=>`<button data-q="${k}" data-v="${v}" class="${v} ${f.ans[k]===v?'on':''}">${ANS_LABEL[v]}</button>`).join('')}</div></div>`).join('')}
+    <h3>Photos <span style="text-transform:none;letter-spacing:0">(optional, up to 5)</span></h3>
+    <div class="phpick">${f.photos.map((p,i)=>`<div class="thumb"><img src="${p.url}" alt=""><button data-rmph="${i}" aria-label="Remove photo">×</button></div>`).join('')}${f.photos.length<5?`<label class="addph"><input type="file" accept="image/*" multiple id="fPhotos" hidden><span>＋</span>Add photo</label>`:''}</div>
+    <h3>Your review <span style="text-transform:none;letter-spacing:0">(optional)</span></h3>
+    <label class="field">What should other tourists know?<textarea id="fBody" maxlength="2000" placeholder="Food, service, prices, waiting time…">${esc(f.body)}</textarea></label>
+    <div class="sub" style="margin-top:16px">Posting as <b style="color:var(--ink)">${esc(profile.username)}</b> ${FLAG[profile.country]||'🌍'} ${esc(profile.country)}</div>
+    <div class="err" id="fErr">${esc(f.err)}</div>
+    <button class="cta" id="fSend" style="background:var(--green)" ${f.sending?'disabled':''}>${f.sending?(f.photos.length?'Uploading photos…':'Sending…'):'Post review'}</button>`;
+}
+function readFields(){ if(!$('fBody')) return; form.body=$('fBody').value; }
+$('reviewSheet').addEventListener('click',async e=>{
+  const s=e.target.closest('[data-star]'), q=e.target.closest('[data-q]'), back=e.target.closest('[data-back]');
+  if(back){ openPlace(byId[back.dataset.back]); return; }
+  const rm=e.target.closest('[data-rmph]'); if(rm){ readFields(); const [x]=form.photos.splice(+rm.dataset.rmph,1); URL.revokeObjectURL(x.url); renderReview(); return; }
+  if(s){ readFields(); form.rating=+s.dataset.star; renderReview(); return; }
+  if(q){ readFields(); form.ans[q.dataset.q]=q.dataset.v; renderReview(); return; }
+  if(e.target.id!=='fSend'||form.sending) return;
+  readFields();
+  const missing=[]; if(!form.rating) missing.push('a star rating');
+  if(Q.some(([k])=>!form.ans[k])) missing.push('all '+Q.length+' questions');
+  if(missing.length){ form.err='Please add '+missing.join(', ')+'.'; renderReview(); return; }
+  form.err=''; form.sending=true; renderReview();
+  try{
+    const urls=[];
+    for(const p of form.photos){
+      const path=`${form.r.id}/${Date.now()}-${Math.random().toString(36).slice(2,8)}.jpg`;
+      const {error}=await sb.storage.from('review-photos').upload(path,p.blob,{contentType:'image/jpeg',upsert:false});
+      if(error) throw error;
+      urls.push(sb.storage.from('review-photos').getPublicUrl(path).data.publicUrl);
+    }
+    const row={restaurant_id:form.r.id,rating:form.rating,...form.ans,photos:urls,body:form.body.trim()||null,user_id:session.user.id};
+    const {data,error}=await sb.from('reviews').insert(row).select('*, profiles(username,country)');
+    if(error) throw error;
+    const saved=data[0];
+    ROWS.unshift(saved); aggregate(); draw();
+    form.done=true; form.sending=false; renderReview();
+  }catch(err){ console.error(err); form.sending=false; form.err='Could not post your review. Check your connection and try again.'; renderReview(); }
+});
+async function shrink(file){
+  const img=await new Promise((ok,no)=>{const i=new Image();i.onload=()=>ok(i);i.onerror=no;i.src=URL.createObjectURL(file);});
+  const s=Math.min(1,1280/Math.max(img.width,img.height)), c=document.createElement('canvas');
+  c.width=Math.round(img.width*s); c.height=Math.round(img.height*s);
+  c.getContext('2d').drawImage(img,0,0,c.width,c.height); URL.revokeObjectURL(img.src);
+  const blob=await new Promise(ok=>c.toBlob(ok,'image/jpeg',0.82));
+  return {blob,url:URL.createObjectURL(blob)};
+}
+$('reviewSheet').addEventListener('change',async e=>{
+  if(e.target.id!=='fPhotos') return;
+  readFields();
+  for(const file of [...e.target.files].slice(0,5-form.photos.length)){
+    try{ form.photos.push(await shrink(file)); }catch(err){ form.err='One photo could not be read. Try a JPG or PNG.'; }
+  }
+  readFields(); renderReview();
+});
+$('viewer').onclick=()=>{$('viewer').hidden=true};
+document.addEventListener('click',e=>{
+  const im=e.target.closest('[data-full]'); if(im){ $('viewer').querySelector('img').src=im.dataset.full; $('viewer').hidden=false; return; }
+  const w=e.target.closest('[data-review]'); if(w){ openReview(byId[w.dataset.review]); return; }
+  const a=e.target.closest('[data-all]'); if(a){ const r=byId[a.dataset.all]; r._all=true; openPlace(r); }
+});
+
+badge(); acctIcon(); startEngine().then(()=>{ draw(); home(); }); initAuth().then(loadReviews);
+</script>
+</body>
+</html>
