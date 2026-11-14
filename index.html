@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#1f8a4c">
-<title>Hongdae Eats — Tourist Food Map</title>
+<title>Seoul Eats — Tourist Food Map</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <style>
 :root{
@@ -98,6 +98,9 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .area-item.off{color:#a3aaa6}
 .area-item small{font-size:12px;background:#f2f4f3;color:var(--muted);padding:3px 8px;border-radius:999px}
 .area-item .live{background:var(--green-soft);color:#0f5a30}
+.area-h{font-size:13px;font-weight:700;color:var(--muted);margin:18px 0 2px;text-transform:uppercase;letter-spacing:.04em}
+.gu-pin{font-size:12.5px;padding:5px 10px;gap:6px}
+.gu-pin small{font-weight:600;color:var(--muted)}
 
 .stn{display:inline-block;background:#fff;border:2px solid var(--ink);border-radius:999px;font-size:11px;font-weight:700;padding:2px 7px;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,.2)}
 .attrib{font-size:11px}
@@ -188,11 +191,11 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 </style>
 </head>
 <body>
-<script src="data.js?v=1"></script>
+<script src="data/seoul.js?v=2026-09"></script>
 <div id="mapwrap"><div id="map"></div></div>
 
 <div class="top">
-  <button class="pill area" id="areaBtn"><span class="dot"></span>Hongdae<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m6 9 6 6 6-6"/></svg></button>
+  <button class="pill area" id="areaBtn"><span class="dot"></span><span id="areaName">Seoul</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m6 9 6 6 6-6"/></svg></button>
   <label class="pill search"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6b736f" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="q" type="search" placeholder="Search restaurants" autocomplete="off"></label>
   <button class="pill icon-btn" id="filterBtn" aria-label="Filters"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 6h16M7 12h10M10 18h4"/></svg><span class="badge" id="badge" hidden>0</span></button>
   <div class="brk"></div>
@@ -203,8 +206,9 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 
 <div class="count" id="count"></div>
 <div class="loading" id="loading">Loading reviews…</div>
+<div class="loading" id="loadingR" hidden>Loading restaurants…</div>
 <div class="fab">
-  <button id="homeBtn" aria-label="Back to Hongdae"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 11 12 4l9 7v9h-6v-6H9v6H3z"/></svg></button>
+  <button id="homeBtn" aria-label="Show all of Seoul"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 11 12 4l9 7v9h-6v-6H9v6H3z"/></svg></button>
   <button id="locBtn" aria-label="My location"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="3.5"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="8"/></svg></button>
 </div>
 
@@ -220,10 +224,9 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.js"></script>
 <script>
-const DATA = window.DATA;
+const SEOUL = window.SEOUL;
 
 /* ---------- constants ---------- */
-const STATION = [37.55723, 126.92447];
 const CATS = {
   korean:  {label:'Korean',        color:'#e4572e'},
   bbq:     {label:'Korean BBQ',    color:'#a23b1f'},
@@ -238,10 +241,47 @@ const CATS = {
 const MUST = [['halal','Halal'],['veg','Vegetarian']];
 const NICE = [['solo','Solo friendly'],['english','English menu'],['cards','Foreign cards']];
 const QUESTIONS = ['Tourist friendly?','Can you eat alone?','Halal?','Vegetarian options?','English or picture menu?','Foreign cards accepted?','2-portion minimum?'];
-const AREAS = [['Hongdae',true],['Itaewon',false],['Myeongdong',false],['Seongsu',false],['Insadong',false],['Gangnam',false]];
+/* popular areas for visitors: [name, lat, lon] */
+const AREAS = [['Hongdae',37.5565,126.9225],['Yeonnam-dong',37.5620,126.9235],['Mangwon',37.5560,126.9050],['Sinchon',37.5598,126.9405],
+  ['Myeongdong',37.5630,126.9850],['Euljiro',37.5663,126.9915],['Insadong',37.5735,126.9860],['Ikseon-dong',37.5728,126.9905],
+  ['Bukchon & Samcheong-dong',37.5810,126.9820],['Gwangjang Market',37.5700,126.9995],['Dongdaemun',37.5665,127.0090],['Daehak-ro',37.5822,127.0020],
+  ['Itaewon',37.5345,126.9946],['Yongsan & Yongridan-gil',37.5310,126.9720],['Seongsu',37.5446,127.0560],['Konkuk Univ.',37.5405,127.0700],
+  ['Gangnam Station',37.4979,127.0276],['Sinsa & Garosu-gil',37.5205,127.0230],['Apgujeong & Cheongdam',37.5270,127.0400],['Jamsil',37.5120,127.0990],
+  ['Yeouido',37.5216,126.9243],['Noryangjin Fish Market',37.5135,126.9405]];
 
-/* restaurants: [id,name,branch,cat,sub,addr,floor,lat,lon,dist,dong] */
-const R = DATA.r.map(a=>({id:a[0],name:a[1],branch:a[2],cat:a[3],sub:a[4],addr:a[5],floor:a[6],lat:a[7],lon:a[8],dist:a[9],dong:a[10]}));
+/* restaurants are loaded one district (gu) at a time: [id,name,branch,sub,addr,floor,lat,lon,dong] */
+const GU = SEOUL.gu, GU_BY = Object.fromEntries(GU.map(g=>[g.k,g])), TOTAL = GU.reduce((s,g)=>s+g.n,0);
+const R = [], byId = {}, loaded = {};
+function addGu(g,data){
+  for(const a of data.r){
+    const [cat,sub]=SEOUL.subs[a[3]];
+    const r={id:a[0],name:a[1],branch:a[2],cat,sub,addr:a[4],floor:a[5],lat:a[6],lon:a[7],dong:data.d[a[8]],gu:g};
+    if(byId[r.id]) continue; R.push(r); byId[r.id]=r;
+  }
+}
+let pending=0;
+function loadGu(k){
+  if(!loaded[k]){
+    pending++; $('loadingR').hidden=false;
+    loaded[k]=fetch(`data/gu/${k}.json?v=${SEOUL.v}`).then(x=>{ if(!x.ok) throw new Error(x.status); return x.json(); })
+      .then(d=>{ addGu(GU_BY[k],d); aggregate(); draw(); })
+      .catch(e=>{ console.error(e); delete loaded[k]; })
+      .finally(()=>{ if(--pending===0) $('loadingR').hidden=true; });
+  }
+  return loaded[k];
+}
+const inBox=(b,la,lo)=>la>=b[0]&&la<=b[2]&&lo>=b[1]&&lo<=b[3];
+const SHOW_Z=14; // closer than this: restaurants; further out: one bubble per district
+/* load every district touching the visible map */
+function ensureView(){
+  if(!M||M.zoom()<SHOW_Z) return Promise.resolve();
+  const v=M.bounds(), ps=[];
+  for(const g of GU) if(!(g.b[2]<v.s||g.b[0]>v.n||g.b[3]<v.w||g.b[1]>v.e)) ps.push(loadGu(g.k));
+  return Promise.all(ps);
+}
+function ensureAround(la,lo){ return Promise.all(GU.filter(g=>inBox([g.b[0]-.005,g.b[1]-.006,g.b[2]+.005,g.b[3]+.006],la,lo)).map(g=>loadGu(g.k))); }
+let allP=null;
+function loadAll(){ return allP||(allP=Promise.all(GU.map(g=>loadGu(g.k)))); }
 
 
 /* ================= REVIEWS (Supabase) ================= */
@@ -265,7 +305,7 @@ let prefs = Object.assign({must:[],nice:[],cats:[]}, store.get()||{});
 const $ = id=>document.getElementById(id);
 /* ---------- map engines (Naver first, OpenStreetMap fallback) ---------- */
 const NAVER_KEY='76a379dlqz';
-const BND=(()=>{let s=90,w=180,n=-90,e=-180;for(const [la,lo] of DATA.b){s=Math.min(s,la);n=Math.max(n,la);w=Math.min(w,lo);e=Math.max(e,lo);}return {s,w,n,e};})();
+const BND=(()=>{let s=90,w=180,n=-90,e=-180;for(const g of GU){s=Math.min(s,g.b[0]);w=Math.min(w,g.b[1]);n=Math.max(n,g.b[2]);e=Math.max(e,g.b[3]);}return {s,w,n,e};})();
 let M=null, selected=null;
 
 
@@ -342,14 +382,12 @@ function hitTest(items,x,y){
 
 function LeafletEngine(){
   const el=$('map'); el.innerHTML='';
-  const map=L.map(el,{zoomControl:false,preferCanvas:true,minZoom:12,maxZoom:19,zoomAnimation:false,markerZoomAnimation:false}).setView([37.5565,126.9225],16);
+  const map=L.map(el,{zoomControl:false,preferCanvas:true,minZoom:10,maxZoom:19,zoomAnimation:false,markerZoomAnimation:false}).setView([(BND.s+BND.n)/2,(BND.w+BND.e)/2],11);
   map.attributionControl.setPrefix(false);
   let tileFailed=false;
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'<span class="attrib">© OpenStreetMap contributors</span>'})
    .on('tileerror',()=>{ if(!tileFailed){tileFailed=true;$('banner').hidden=false;setTimeout(()=>$('banner').hidden=true,6000)} }).addTo(map);
-  L.polygon(DATA.b,{color:'#1f8a4c',weight:3,fillColor:'#1f8a4c',fillOpacity:.07,interactive:false}).addTo(map);
-  map.setMaxBounds(L.latLngBounds([BND.s,BND.w],[BND.n,BND.e]).pad(1.5));
-  L.marker(STATION,{interactive:false,icon:L.divIcon({className:'',html:'<div class="stn">🚇 Hongik Univ.</div>',iconSize:[120,22],iconAnchor:[60,11]})}).addTo(map);
+  map.setMaxBounds(L.latLngBounds([BND.s,BND.w],[BND.n,BND.e]).pad(.3));
   const pills=L.layerGroup().addTo(map);
   const cv=document.createElement('canvas'); cv.style.cssText='position:absolute;left:0;top:0;pointer-events:none;z-index:450';
   el.appendChild(cv);
@@ -367,6 +405,8 @@ function LeafletEngine(){
     name:'osm', canvas:cv, items:()=>items,
     zoom:()=>map.getZoom(),
     setView:(la,lo,z)=>map.setView([la,lo],z),
+    center:()=>{const c=map.getCenter();return {lat:c.lat,lon:c.lng}},
+    bounds:()=>{const b=map.getBounds();return {s:b.getSouth(),w:b.getWest(),n:b.getNorth(),e:b.getEast()}},
     fit:()=>map.fitBounds([[BND.s,BND.w],[BND.n,BND.e]],{padding:[20,20]}),
     render(ds,ps){
       items=ds; repaint(); pills.clearLayers();
@@ -379,7 +419,7 @@ function LeafletEngine(){
         this._me=L.circleMarker([la,lo],{radius:8,color:'#fff',weight:3,fillColor:'#2a7bf6',fillOpacity:1,interactive:false}).addTo(map); }
       else { this._me.setLatLng([la,lo]); this._acc.setLatLng([la,lo]).setRadius(acc||20); }
     },
-    onZoom(fn){ map.on('zoomend',fn) },
+    onIdle(fn){ map.on('moveend',fn) },
     onClick(fn){ clickFns.push(fn) },
     destroy(){ map.remove() }
   };
@@ -388,11 +428,9 @@ function LeafletEngine(){
 function NaverEngine(){
   const nm=naver.maps, el=$('map'); el.innerHTML='';
   const LL=(la,lo)=>new nm.LatLng(la,lo);
-  const map=new nm.Map(el,{center:LL(37.5565,126.9225),zoom:16,minZoom:12,maxZoom:19,
+  const map=new nm.Map(el,{center:LL((BND.s+BND.n)/2,(BND.w+BND.e)/2),zoom:11,minZoom:10,maxZoom:19,
     zoomControl:false,mapDataControl:false,scaleControl:false,logoControl:true,
     logoControlOptions:{position:nm.Position.BOTTOM_LEFT}});
-  new nm.Polygon({map,paths:[DATA.b.map(([la,lo])=>LL(la,lo))],strokeColor:'#1f8a4c',strokeWeight:3,fillColor:'#1f8a4c',fillOpacity:.07,clickable:false});
-  new nm.Marker({map,position:LL(STATION[0],STATION[1]),clickable:false,zIndex:50,icon:{content:'<div class="stn" style="transform:translate(-50%,-50%)">🚇 Hongik Univ.</div>',anchor:new nm.Point(0,0)}});
 
   // all restaurant dots on one canvas (fast for 3,000 points)
   function DotLayer(){ this.c=document.createElement('canvas'); this.c.style.position='absolute'; this.c.style.pointerEvents='none'; this.dots=[]; }
@@ -434,6 +472,8 @@ function NaverEngine(){
     name:'naver', canvas:layer.c, items:()=>layer.dots,
     zoom:()=>map.getZoom(),
     setView:(la,lo,z)=>{ map.setZoom(z,false); map.setCenter(LL(la,lo)); },
+    center:()=>{const c=map.getCenter();return {lat:c.y,lon:c.x}},
+    bounds:()=>{const b=map.getBounds(),mn=b.getMin(),mx=b.getMax();return {s:mn.y,w:mn.x,n:mx.y,e:mx.x}},
     fit:()=>{
       const s=map.getSize(), W=s.width-30, H=s.height-260, my=la=>Math.log(Math.tan(Math.PI/4+la*Math.PI/360));
       const zx=Math.log2(W*360/(256*(BND.e-BND.w))), zy=Math.log2(H*2*Math.PI/(256*(my(BND.n)-my(BND.s))));
@@ -454,7 +494,7 @@ function NaverEngine(){
         this._me=new nm.Marker({map,position:LL(la,lo),clickable:false,zIndex:3000,icon:{content:'<div class="medot"></div>',anchor:new nm.Point(0,0)}}); }
       else { this._me.setPosition(LL(la,lo)); this._acc.setCenter(LL(la,lo)); this._acc.setRadius(acc||20); }
     },
-    onZoom(fn){ nm.Event.addListener(map,'zoom_changed',fn) },
+    onIdle(fn){ nm.Event.addListener(map,'idle',fn) },
     onClick(fn){ clickFns.push(fn) },
     destroy(){ try{map.destroy()}catch(e){} }
   };
@@ -500,7 +540,7 @@ let lastTap=0;
   el.addEventListener('pointercancel',end,true);
   el.addEventListener('touchend',e=>{ if(Date.now()-lastTap<300&&e.cancelable) e.preventDefault(); },{capture:true,passive:false});
 })();
-function wire(){ try{ if(myPos) M.me(myPos.lat,myPos.lon,myPos.acc); }catch(e){ console.error(e); } M.onZoom(draw); M.onClick(()=>{$('results').hidden=true}); }
+function wire(){ M.fit=()=>M.setView(37.552,126.99,11); /* Seoul overview */ try{ if(myPos) M.me(myPos.lat,myPos.lon,myPos.acc); }catch(e){ console.error(e); } M.onIdle(()=>{ draw(); areaLabel(); ensureView(); }); M.onClick(()=>{$('results').hidden=true}); }
 
 function radius(){const z=M.zoom();return z>=18?8:z>=17?6.5:z>=16?5:z>=15?4:3}
 function visible(r){
@@ -512,16 +552,25 @@ function faded(r){ return prefs.nice.some(k=>!matches(r,k)); }
 
 function draw(){
   if(!M) return;
-  const ds=[], ps=[]; let n=0, rev=0; const rad=radius(), z=M.zoom(), big=z>=17;
+  const ds=[], ps=[]; let n=0; const rad=radius(), z=M.zoom(), big=z>=17;
+  if(z<SHOW_Z){
+    for(const g of GU) ps.push({lat:g.c[0],lon:g.c[1],z:10,html:z<=11?`<div class="pin gu-pin">${esc(g.en.replace('-gu',''))}</div>`:`<div class="pin gu-pin">${esc(g.en)} <small>${g.n.toLocaleString()}</small></div>`,
+      onClick:()=>{ lastTap=Date.now(); M.setView(g.c[0],g.c[1],15); }});
+    M.render(ds,ps);
+    $('count').innerHTML=`<b>${TOTAL.toLocaleString()}</b> restaurants in Seoul · <b>${REVIEWED}</b> reviewed`;
+    return;
+  }
+  const v=M.bounds(), py=(v.n-v.s)*.5, px=(v.e-v.w)*.5, cx=(v.w+v.e)/2, cy=(v.s+v.n)/2;
   for(const r of R){
-    if(!visible(r)) continue; n++;
+    if(r.lat<v.s-py||r.lat>v.n+py||r.lon<v.w-px||r.lon>v.e+px) continue;
+    if(!visible(r)) continue;
+    if(r.lat>=v.s&&r.lat<=v.n&&r.lon>=v.w&&r.lon<=v.e) n++;
     const f=faded(r), onClick=()=>openPlace(r);
-    if(r.rv) rev++;
     if(big){
       ds.push({lat:r.lat,lon:r.lon,mode:'icon',onClick,fa:f?.35:1,
         fill:r.rv?rateColor(r.rv.rating):'#8a938f', team:!!(r.rv&&r.rv.team),
         label:r.rv?`${r.name} ★${r.rv.rating.toFixed(1)}`:r.name, lc:'#1b1f1d',
-        prio:(r.rv?(r.rv.team?0:1e5):2e5)+r.dist});
+        prio:(r.rv?(r.rv.team?0:1e5):2e5)+Math.abs(r.lat-cy)*1e5+Math.abs(r.lon-cx)*1e5});
       continue;
     }
     if(r.rv){ ds.push({lat:r.lat,lon:r.lon,mode:'dot',r:rad+1.5,fill:rateColor(r.rv.rating),fa:f?.25:1,stroke:'#fff',sw:2,sa:f?.3:1,onClick}); continue; }
@@ -530,13 +579,13 @@ function draw(){
   ds.sort((a,b)=>(a.sw===2)-(b.sw===2));
   ds.R0 = z>=18?12:10;
   M.render(ds,ps);
-  $('count').innerHTML=`<b>${n.toLocaleString()}</b> restaurants · <b>${rev}</b> reviewed`;
+  $('count').innerHTML=`<b>${n.toLocaleString()}</b> restaurants here · <b>${REVIEWED}</b> reviewed in Seoul`;
 }
 
 /* ---------- place sheet ---------- */
 const esc = s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 function links(r){
-  const q=encodeURIComponent(r.name+' '+r.addr.replace(/\s*\d+층.*$/,''));
+  const q=encodeURIComponent(r.name+' '+r.gu.ko+' '+r.addr.replace(/\s*\d+층.*$/,''));
   return {
     naver:`https://map.naver.com/p/search/${q}`,
     kakao:`https://map.kakao.com/link/to/${encodeURIComponent(r.name)},${r.lat},${r.lon}`,
@@ -544,7 +593,7 @@ function links(r){
   };
 }
 function stars(x){const f=Math.round(x);return '★'.repeat(f)+'<i>'+'★'.repeat(5-f)+'</i>'}
-function walk(m){const min=Math.max(1,Math.round(m*1.3/80));return `${min} min walk from Hongik Univ. Stn`}
+function walk(r){ if(!myPos) return ''; const m=distM(myPos.lat,myPos.lon,r.lat,r.lon); if(m>5000) return ''; return ` · ${Math.max(1,Math.round(m*1.3/80))} min walk from you`; }
 function openPlace(r){
   const l=links(r), c=CATS[r.cat];
   $('placeSheet').innerHTML=`
@@ -552,7 +601,7 @@ function openPlace(r){
     <h2>${esc(r.name)}${r.branch?` <span class="sub">${esc(r.branch)}</span>`:''}</h2>
     <div class="row" style="margin-top:6px">
       <span class="tag">${esc(r.sub)}</span>
-      <span class="tag">${esc(r.dong)}</span>
+      <span class="tag">${esc(r.dong)}, ${esc(r.gu.en)}</span>
     </div>
     ${r.rv?`<div class="rating"><span class="stars on">${stars(r.rv.rating)}</span><b style="color:var(--ink)">${r.rv.rating.toFixed(1)}</b> · ${r.rv.count} review${r.rv.count>1?'s':''}${r.rv.team?' <span class="teamtag">✓ Team pick</span>':''}</div>`:`<div class="rating"><span class="stars">★★★★★</span>No reviews yet</div>`}
     <div class="dir">
@@ -561,7 +610,7 @@ function openPlace(r){
         <a href="${l.kakao}" target="_blank" rel="noopener">Kakao Map</a>
         <a href="${l.google}" target="_blank" rel="noopener">Google Maps</a>
       </div>
-      <div class="hint">Naver gives the most accurate directions in Korea · ${walk(r.dist)}</div>
+      <div class="hint">Naver gives the most accurate directions in Korea${walk(r)}</div>
     </div>
     <h3>What tourists say</h3>
     ${Q.map(([k,q])=>`<div class="q"><span>${q}</span>${r.rv?`<span class="ans ${ansClass(k,r.rv.ans[k])}">${ANS_LABEL[r.rv.ans[k]]}</span>`:'<span>No answers yet</span>'}</div>`).join('')}
@@ -572,7 +621,7 @@ function openPlace(r){
     ${r.rv?(r._all?r.rv.reviews:r.rv.reviews.slice(0,4)).map(v=>`<div class="rev"><div class="rev-h"><span class="av">${esc(v.who[0]||'?')}</span><div><b>${esc(v.who)}</b>${v.team?' <span class="teamtag">Team</span>':''} <span>${v.flag} ${esc(v.country)}</span><small>${v.date}</small></div><span class="rs">${'★'.repeat(v.stars)}<i>${'★'.repeat(5-v.stars)}</i></span></div>${v.text?`<p>${esc(v.text)}</p>`:''}${v.photos.length?`<div class="ph">${v.photos.map(u=>`<img src="${esc(u)}" loading="lazy" data-full="${esc(u)}" alt="">`).join('')}</div>`:''}</div>`).join('')+(!r._all&&r.rv.reviews.length>4?`<button class="more" data-all="${r.id}" style="width:100%">See all ${r.rv.count} reviews</button>`:''):((r.mine&&r.mine.length)?'':'<div class="empty">No tourist has reviewed this place yet. Been here? Your review helps the next traveler.</div>')}
     <button class="cta" data-review="${r.id}">Write a review</button>
     <h3>Address</h3>
-    <div class="sub" style="font-size:14px;line-height:1.5">${esc(r.addr)}${r.floor&&r.floor!=='1'?` · Floor ${esc(r.floor)}`:''}</div>
+    <div class="sub" style="font-size:14px;line-height:1.5">${esc(r.addr)}, ${esc(r.gu.ko)}${r.floor&&r.floor!=='1'?` · Floor ${esc(r.floor)}`:''}</div>
   `;
   open('placeSheet');
   M&&M.ring(r.lat,r.lon,M.zoom()>=17?17:radius()+6);
@@ -608,22 +657,45 @@ $('filterSheet').addEventListener('click',e=>{
 
 /* ---------- area sheet ---------- */
 $('areaBtn').onclick=()=>{
-  $('areaSheet').innerHTML=`<div class="grab"></div><button class="close" data-close>×</button><h2>Choose an area</h2><div style="margin-top:10px">`+
-   AREAS.map(([n,on])=>`<button class="area-item ${on?'':'off'}" ${on?'data-home':''}>${n}<small class="${on?'live':''}">${on?`${R.length.toLocaleString()} places`:'Coming soon'}</small></button>`).join('')+`</div>`;
+  $('areaSheet').innerHTML=`<div class="grab"></div><button class="close" data-close>×</button><h2>Choose an area</h2>
+    <button class="area-item" data-home>All of Seoul<small class="live">${TOTAL.toLocaleString()} places</small></button>
+    <div class="area-h">Popular with visitors</div>`+
+   AREAS.map(([n],i)=>`<button class="area-item" data-area="${i}">${esc(n)}</button>`).join('')+
+   `<div class="area-h">Districts</div>`+
+   [...GU].sort((a,b)=>a.en.localeCompare(b.en)).map(g=>`<button class="area-item" data-gu="${g.k}">${esc(g.en)}<small>${g.n.toLocaleString()} places</small></button>`).join('');
   open('areaSheet');
 };
-$('areaSheet').addEventListener('click',e=>{if(e.target.closest('[data-home]')){close();home()}});
+$('areaSheet').addEventListener('click',e=>{
+  if(e.target.closest('[data-home]')){close();home();return}
+  const a=e.target.closest('[data-area]'); if(a){ const [n,la,lo]=AREAS[+a.dataset.area]; close(); M&&M.setView(la,lo,16); return; }
+  const g=e.target.closest('[data-gu]'); if(g){ const x=GU_BY[g.dataset.gu]; close(); M&&M.setView(x.c[0],x.c[1],15); }
+});
+/* name in the area button follows the map */
+function areaLabel(){
+  if(!M) return; let t='Seoul';
+  if(M.zoom()>=SHOW_Z){
+    const c=M.center(); let best=null,bd=1e9;
+    for(const [n,la,lo] of AREAS){ const d=distM(c.lat,c.lon,la,lo); if(d<bd){bd=d;best=n;} }
+    if(bd<900) t=best;
+    else { let gb=null,gd=1e9; for(const g of GU){ const d=distM(c.lat,c.lon,g.c[0],g.c[1]); if(d<gd){gd=d;gb=g;} } if(gb) t=gb.en; }
+  }
+  $('areaName').textContent=t;
+}
 
 /* ---------- search ---------- */
-$('q').addEventListener('input',e=>{
-  const v=e.target.value.trim().toLowerCase();
+function search(){
+  const v=$('q').value.trim().toLowerCase();
   if(!v){$('results').hidden=true;return}
-  const hits=R.filter(r=>r.name.toLowerCase().includes(v)||r.sub.toLowerCase().includes(v)||CATS[r.cat].label.toLowerCase().includes(v))
-              .sort((a,b)=>a.dist-b.dist).slice(0,30);
-  $('results').innerHTML=hits.length?hits.map(r=>`<button class="res" data-id="${r.id}"><span class="sw" style="background:${r.rv?rateColor(r.rv.rating):'#c4cac7'}"></span><span>${esc(r.name)}<small>${esc(r.sub)} · ${esc(r.dong)}</small></span></button>`).join('')
-    :`<div class="res" style="color:var(--muted)">No matches. Try "ramen", "bbq" or a Korean name.</div>`;
+  const c=M?M.center():{lat:37.5665,lon:126.978}, d=r=>(r.lat-c.lat)**2+((r.lon-c.lon)*.79)**2;
+  const hits=R.filter(r=>r.name.toLowerCase().includes(v)||r.sub.toLowerCase().includes(v)||CATS[r.cat].label.toLowerCase().includes(v)||r.dong.toLowerCase().includes(v))
+              .sort((a,b)=>(!!b.rv-!!a.rv)||(d(a)-d(b))).slice(0,30);
+  const busy=!allDone;
+  $('results').innerHTML=hits.length?hits.map(r=>`<button class="res" data-id="${r.id}"><span class="sw" style="background:${r.rv?rateColor(r.rv.rating):'#c4cac7'}"></span><span>${esc(r.name)}<small>${esc(r.sub)} · ${esc(r.dong)}, ${esc(r.gu.en)}</small></span></button>`).join('')+(busy?'<div class="res" style="color:var(--muted)">Searching all of Seoul…</div>':'')
+    :`<div class="res" style="color:var(--muted)">${busy?'Searching all of Seoul…':'No matches. Try "ramen", "bbq" or a Korean name.'}</div>`;
   $('results').hidden=false;
-});
+}
+let allDone=false, sT=null;
+$('q').addEventListener('input',()=>{ clearTimeout(sT); sT=setTimeout(search,150); if(!allP) loadAll().then(()=>{ allDone=true; search(); }); });
 $('results').addEventListener('click',e=>{
   const b=e.target.closest('[data-id]'); if(!b) return;
   const r=R.find(x=>x.id===b.dataset.id);
@@ -644,7 +716,7 @@ $('homeBtn').onclick=home;
 /* ---------- my location ---------- */
 let myPos=null, watching=false, wantJump=false;
 function distM(a,b,c,d){const R=6371000,p1=a*Math.PI/180,p2=c*Math.PI/180,dl=(d-b)*Math.PI/180,dp=p2-p1;const h=Math.sin(dp/2)**2+Math.cos(p1)*Math.cos(p2)*Math.sin(dl/2)**2;return 2*R*Math.asin(Math.sqrt(h));}
-function inHongdae(p){ return distM(p.lat,p.lon,STATION[0],STATION[1])<3000; }
+function inSeoul(p){ return p.lat>BND.s-.02&&p.lat<BND.n+.02&&p.lon>BND.w-.02&&p.lon<BND.e+.02; }
 function startWatch(){
   if(watching) return; watching=true;
   try{
@@ -660,9 +732,9 @@ function startWatch(){
 }
 function jumpToMe(){
   if(!myPos||!M) return;
-  if(!inHongdae(myPos)){ flash("You're not in Hongdae right now"); return; }
+  if(!inSeoul(myPos)){ flash("You're not in Seoul right now"); return; }
   M.setView(myPos.lat-0.0007,myPos.lon,18);
-  showNearby();
+  ensureAround(myPos.lat,myPos.lon).then(showNearby);
 }
 function showNearby(){
   const near=R.map(r=>({r,d:distM(myPos.lat,myPos.lon,r.lat,r.lon)})).filter(x=>x.d<250).sort((a,b)=>a.d-b.d).slice(0,8);
@@ -685,8 +757,7 @@ function flash(t){const b=$('banner');b.textContent=t;b.hidden=false;setTimeout(
 /* ---------- reviews: load, aggregate, write ---------- */
 const COUNTRIES=[['🇹🇷','Turkey'],['🇺🇸','USA'],['🇬🇧','UK'],['🇩🇪','Germany'],['🇫🇷','France'],['🇮🇹','Italy'],['🇪🇸','Spain'],['🇳🇱','Netherlands'],['🇸🇪','Sweden'],['🇷🇺','Russia'],['🇺🇦','Ukraine'],['🇵🇱','Poland'],['🇨🇦','Canada'],['🇦🇺','Australia'],['🇧🇷','Brazil'],['🇲🇽','Mexico'],['🇯🇵','Japan'],['🇨🇳','China'],['🇹🇼','Taiwan'],['🇭🇰','Hong Kong'],['🇻🇳','Vietnam'],['🇹🇭','Thailand'],['🇵🇭','Philippines'],['🇮🇩','Indonesia'],['🇲🇾','Malaysia'],['🇸🇬','Singapore'],['🇮🇳','India'],['🇵🇰','Pakistan'],['🇧🇩','Bangladesh'],['🇺🇿','Uzbekistan'],['🇰🇿','Kazakhstan'],['🇦🇿','Azerbaijan'],['🇸🇦','Saudi Arabia'],['🇦🇪','UAE'],['🇪🇬','Egypt'],['🇲🇦','Morocco'],['🇳🇬','Nigeria'],['🇿🇦','South Africa'],['🇰🇷','Korea'],['🌍','Other']];
 const FLAG=Object.fromEntries(COUNTRIES.map(([f,n])=>[n,f]));
-const byId=Object.fromEntries(R.map(r=>[r.id,r]));
-let ROWS=[];
+let ROWS=[], REVIEWED=0;
 const sb = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {auth:{persistSession:true,autoRefreshToken:true}}) : null;
 const fmtDate=s=>{try{return new Date(s).toLocaleDateString('en-US',{month:'short',year:'numeric'})}catch(e){return ''}};
 
@@ -697,6 +768,7 @@ function toView(x){
 function aggregate(){
   for(const r of R){ delete r.rv; r.mine=[]; }
   const groups={};
+  REVIEWED=new Set(ROWS.filter(x=>x.approved).map(x=>x.restaurant_id)).size;
   for(const row of ROWS){
     if(!row.approved){ if(byId[row.restaurant_id]) byId[row.restaurant_id].mine.push(toView(row)); continue; }
     (groups[row.restaurant_id]=groups[row.restaurant_id]||[]).push(row);

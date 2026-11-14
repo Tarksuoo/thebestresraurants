@@ -6,3 +6,8 @@
   for = "/supabase/*"
   [headers.values]
     X-Robots-Tag = "noindex"
+
+[[headers]]
+  for = "/tools/*"
+  [headers.values]
+    X-Robots-Tag = "noindex"
