@@ -177,7 +177,7 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .vtick{display:inline-grid;place-items:center;width:15px;height:15px;border-radius:50%;background:#1d9bf0;color:#fff!important;font-size:10px!important;font-weight:900;margin-left:3px;vertical-align:1px}
 .trusttag{background:#eef4ff;color:#1d5fd0!important;font-size:11px!important;font-weight:700;padding:1px 7px;border-radius:999px;margin-left:4px}
 .pf-name .vtick.gold{width:22px!important;height:22px!important;top:-3px;margin-left:5px}
-.vtick.gold.rainbow{background-image:url(rainbow-tick.svg)!important}
+.vtick.gold.rainbow{background-image:url(rainbow-tick.png)!important}
 .vtick.gold{background:url(gold-tick.png) center/contain no-repeat;font-size:0!important;width:18px!important;height:18px!important;border-radius:0;vertical-align:middle;position:relative;top:-2px;margin-left:4px}
 .avimg{width:100%;height:100%;object-fit:cover;border-radius:50%}
 .av{overflow:hidden}.me{overflow:hidden}
@@ -640,7 +640,7 @@ function openPlace(r){
     <div class="empty">Menu coming soon.</div>
     <h3>Reviews</h3>
     ${(r.mine&&r.mine.length)?r.mine.map(v=>`<div class="rev pending"><div class="rev-h"><span class="av">${esc(v.who[0])}</span><div><b>${esc(v.who)}</b> <span class="pend">Waiting for approval</span><small>Only you can see this · ${v.date}</small></div><span class="rs">${'★'.repeat(v.stars)}<i>${'★'.repeat(5-v.stars)}</i></span></div>${v.text?`<p>${esc(v.text)}</p>`:''}</div>`).join(''):''}
-    ${r.rv?(r._all?r.rv.reviews:r.rv.reviews.slice(0,4)).map(v=>`<div class="rev"><div class="rev-h"><span class="av">${v.avatar?`<img class="avimg" src="${esc(v.avatar)}" alt="">`:esc(v.who[0]||'?')}</span><div><b>${esc(v.who)}</b>${v.rainbow?'<span class="vtick gold rainbow" data-badge="Very special person ♥">✓</span>':v.insider?'<span class="vtick gold" data-badge="Seoul Eats Insider · hand-picked by our team">✓</span>':v.verified?'<span class="vtick" data-badge="Verified reviewer · 100+ published reviews">✓</span>':v.cnt>=20?'<span class="trusttag">Trusted</span>':''}${v.team?' <span class="teamtag">Team</span>':''} <span>${v.flag} ${esc(v.country)}</span><small>${v.date}</small></div><span class="rs">${'★'.repeat(v.stars)}<i>${'★'.repeat(5-v.stars)}</i></span></div>${v.text?`<p>${esc(v.text)}</p>`:''}${v.photos.length?`<div class="ph">${v.photos.map(u=>`<img src="${esc(u)}" loading="lazy" data-full="${esc(u)}" alt="">`).join('')}</div>`:''}</div>`).join('')+(!r._all&&r.rv.reviews.length>4?`<button class="more" data-all="${r.id}" style="width:100%">See all ${r.rv.count} reviews</button>`:''):((r.mine&&r.mine.length)?'':'<div class="empty">No tourist has reviewed this place yet. Been here? Your review helps the next traveler.</div>')}
+    ${r.rv?(r._all?r.rv.reviews:r.rv.reviews.slice(0,4)).map(v=>`<div class="rev"><div class="rev-h"><span class="av">${v.avatar?`<img class="avimg" src="${esc(v.avatar)}" alt="">`:esc(v.who[0]||'?')}</span><div><b>${esc(v.who)}</b>${v.rainbow?'<span class="vtick gold rainbow" data-badge="Seoul Eats Special ✨">✓</span>':v.insider?'<span class="vtick gold" data-badge="Seoul Eats Insider · hand-picked by our team">✓</span>':v.verified?'<span class="vtick" data-badge="Verified reviewer · 100+ published reviews">✓</span>':v.cnt>=20?'<span class="trusttag">Trusted</span>':''}${v.team?' <span class="teamtag">Team</span>':''} <span>${v.flag} ${esc(v.country)}</span><small>${v.date}</small></div><span class="rs">${'★'.repeat(v.stars)}<i>${'★'.repeat(5-v.stars)}</i></span></div>${v.text?`<p>${esc(v.text)}</p>`:''}${v.photos.length?`<div class="ph">${v.photos.map(u=>`<img src="${esc(u)}" loading="lazy" data-full="${esc(u)}" alt="">`).join('')}</div>`:''}</div>`).join('')+(!r._all&&r.rv.reviews.length>4?`<button class="more" data-all="${r.id}" style="width:100%">See all ${r.rv.count} reviews</button>`:''):((r.mine&&r.mine.length)?'':'<div class="empty">No tourist has reviewed this place yet. Been here? Your review helps the next traveler.</div>')}
     <button class="cta" data-review="${r.id}">Write a review</button>
     <h3>Address</h3>
     <div class="sub" style="font-size:14px;line-height:1.5">${esc(r.addr)}, ${esc(r.gu.ko)}${r.floor&&r.floor!=='1'?` · Floor ${esc(r.floor)}`:''}</div>
@@ -781,9 +781,9 @@ const COUNTRIES=[['🇹🇷','Turkey'],['🇺🇸','USA'],['🇬🇧','UK'],['�
 const FLAG=Object.fromEntries(COUNTRIES.map(([f,n])=>[n,f]));
 let ROWS=[], REVIEWED=0, COUNTS={};
 /* Gold tick: exact usernames (case-sensitive) */
-const INSIDERS=['samanta','Tarksuoo','Jane_ff'];
+const INSIDERS=['samanta'];
 /* Rainbow tick: exact usernames */
-const RAINBOW=[];
+const RAINBOW=['Tarksuoo','Jane_ff'];
 const lookAlike=u=>[...INSIDERS,...RAINBOW].some(n=>n.toLowerCase()===String(u).toLowerCase()&&n!==u)||ROWS.some(x=>x.profiles&&x.profiles.username&&x.profiles.username.toLowerCase()===String(u).toLowerCase());
 const isInsider=p=>!!p&&(!!p.verified||INSIDERS.includes(String(p.username||'')));
 const sb = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {auth:{persistSession:true,autoRefreshToken:true}}) : null;
@@ -850,7 +850,7 @@ function myStats(){
   return {ok:ok.length,pending:mine.length-ok.length,list:mine};
 }
 function level(n,insider,rainbow){
-  if(rainbow) return {name:'Very special person ♥',tick:'rainbow',next:null,txt:'rainbow tick, one of a kind'};
+  if(rainbow) return {name:'Seoul Eats Special ✨',tick:'rainbow',next:null,txt:'rainbow tick, one of a kind'};
   if(insider) return {name:'Seoul Eats Insider',tick:'gold',next:null,txt:'gold tick, hand-picked by the team'};
   if(n>=100) return {name:'Verified reviewer',tick:'blue',next:null,txt:'blue tick on all your reviews'};
   if(n>=20) return {name:'Trusted reviewer',next:100};
