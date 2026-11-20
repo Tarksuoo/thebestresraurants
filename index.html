@@ -261,7 +261,7 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 </style>
 </head>
 <body>
-<script src="i18n.js?v=12"></script>
+<script src="i18n.js?v=13"></script>
 <script src="data/seoul.js?v=2026-09"></script>
 <div id="mapwrap"><div id="map"></div></div>
 
@@ -697,7 +697,7 @@ function menuHTML(r){
   loadMenuDb(r);
   const ko=LANG==='ko', db=MDB[r.id]||{photos:[],links:[]}, {list,chain}=menuItems(r), cart=CART[r.id]||[];
   const lk=db.links||[], nv=lk.filter(x=>/naver\.(me|com)/i.test(x.url)).slice(-1)[0], own=lk.filter(x=>!/naver\.(me|com)/i.test(x.url)).slice(-1)[0];
-  let h=`<div class="mlinks">${own?`<a class="mlink" href="${esc(own.url)}" target="_blank" rel="noopener nofollow">🔗 Open online menu <small>restaurant's website</small></a>`:''}<a class="mlink kk" id="kkLink" data-kk="1" href="${kakaoPlaceLink(r)}" rel="noopener">🟡 See menu on Kakao Map <small>photos &amp; prices</small></a>${nv?`<a class="mlink" href="${esc(nv.url)}" target="_blank" rel="noopener">🟢 See menu on Naver <small>photos &amp; prices</small></a>`:''}</div>`;
+  let h=`<div class="mlinks">${own?`<a class="mlink" href="${esc(own.url)}" target="_blank" rel="noopener nofollow">🔗 Open online menu <small>restaurant's website</small></a>`:''}<a class="mlink kk" id="kkLink" data-kk="1" href="${kakaoPlaceLink(r)}" rel="noopener">🟡 See menu on Kakao Map <small>photos &amp; prices</small></a><div class="mnote" style="margin-top:0">If you don't see a menu on Kakao Map, the restaurant hasn't shared one online. It's not a problem with the app.</div>${nv?`<a class="mlink" href="${esc(nv.url)}" target="_blank" rel="noopener">🟢 See menu on Naver <small>photos &amp; prices</small></a>`:''}</div>`;
   if(db.photos.length) h+=`<div class="ph mph">${db.photos.map(x=>`<img src="${esc(x.url)}" data-full="${esc(x.url)}" alt="">${x.approved?'':''}`).join('')}</div>${db.photos.some(x=>!x.approved)?'<div class="mnote">Your photo is waiting for approval.</div>':''}`;
   const all=r._menuAll, shown=all?list:list.slice(0,10);
   let sec='';
