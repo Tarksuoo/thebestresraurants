@@ -136,7 +136,7 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .qty .add{background:var(--green);color:#fff}
 .ghostcta{background:#f2f4f3!important;color:var(--ink)!important}
 .ordbtn{background:#ff6b00!important;position:sticky;bottom:10px;box-shadow:0 6px 20px rgba(255,107,0,.35)}
-.order{position:fixed;inset:0;z-index:2500;background:#fff;display:flex;align-items:center;justify-content:center;padding:24px}
+.order{position:fixed;inset:0;z-index:2500;background:#fff;display:flex;align-items:center;justify-content:center;padding:24px 20px}
 .ord-in{width:100%;max-width:480px}
 .ord-top{font-size:34px;font-weight:900;text-align:center}.ord-sub{text-align:center;color:var(--muted);margin-bottom:18px}
 .ord-row{display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-bottom:2px solid var(--line);font-size:26px;font-weight:800}
@@ -148,6 +148,14 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .mlink{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-radius:12px;background:#f2f4f3;font-weight:700;color:var(--ink);text-decoration:none;font-size:14.5px}
 .mlink.kk{width:100%;text-align:left}
 .mlink small{font-weight:500;color:var(--muted);font-size:12px}
+.dish-h b{display:block;font-size:24px;font-weight:900}.dish-h small{color:var(--muted);font-size:15px}
+.step{display:flex;align-items:center;gap:18px;margin:16px 0 4px}.step button{width:44px;height:44px;border-radius:50%;background:#f2f4f3;font-size:22px;font-weight:800}.step b{font-size:24px;min-width:24px;text-align:center}
+.chips{display:flex;flex-wrap:wrap;gap:8px}.chips.col{flex-direction:column;margin-top:14px}
+.chip{padding:9px 13px;border-radius:12px;background:#f2f4f3;text-align:left;font-weight:650;font-size:14px;color:var(--ink)}
+.chip small{display:block;font-weight:500;font-size:12px;color:var(--muted)}.chip.on{background:#ff6b00;color:#fff}.chip.on small{color:#ffe1cc}
+.order .ord-in{max-height:100%;overflow-y:auto}.order h3{font-size:13px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin:20px 0 8px}
+.ord-row em{display:block;font-style:normal;font-size:18px;color:#ff6b00;font-weight:800;margin-top:2px}
+.ord-q{padding:12px 0;border-bottom:2px solid var(--line);font-size:22px;font-weight:800}.ord-q small{display:block;font-size:14px;font-weight:500;color:var(--muted)}
 .msec{font-size:12px;font-weight:800;color:var(--green);margin:14px 0 4px;letter-spacing:.02em}
 .mi{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid var(--line);font-size:14.5px}
 .mi small{display:block;color:var(--muted);font-size:12.5px;margin-top:2px;line-height:1.35}
@@ -252,7 +260,7 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 </style>
 </head>
 <body>
-<script src="i18n.js?v=11"></script>
+<script src="i18n.js?v=12"></script>
 <script src="data/seoul.js?v=2026-09"></script>
 <div id="mapwrap"><div id="map"></div></div>
 
@@ -686,15 +694,15 @@ function menuItems(r){
 function menuHTML(r){
   if(!MENUS){ loadMenus().then(()=>refreshMenu(r)); }
   loadMenuDb(r);
-  const ko=LANG==='ko', db=MDB[r.id]||{photos:[],links:[]}, {list,chain}=menuItems(r), cart=CART[r.id]||{};
+  const ko=LANG==='ko', db=MDB[r.id]||{photos:[],links:[]}, {list,chain}=menuItems(r), cart=CART[r.id]||[];
   const lk=db.links||[], nv=lk.filter(x=>/naver\.(me|com)/i.test(x.url)).slice(-1)[0], own=lk.filter(x=>!/naver\.(me|com)/i.test(x.url)).slice(-1)[0];
-  let h=`<div class="mlinks">${own?`<a class="mlink" href="${esc(own.url)}" target="_blank" rel="noopener nofollow">🔗 Open online menu <small>restaurant's website</small></a>`:''}<button class="mlink kk" data-kmenu="${r.id}">🟡 See menu on Kakao Map <small>photos &amp; prices</small></button>${nv?`<a class="mlink" href="${esc(nv.url)}" target="_blank" rel="noopener">🟢 See menu on Naver <small>photos &amp; prices</small></a>`:''}</div>`;
+  let h=`<div class="mlinks">${own?`<a class="mlink" href="${esc(own.url)}" target="_blank" rel="noopener nofollow">🔗 Open online menu <small>restaurant's website</small></a>`:''}<a class="mlink kk" id="kkLink" href="${kakaoUrl[r.id]?(kakaoUrl[r.id].includes('place.map.kakao.com')?kakaoUrl[r.id]+'#menuInfo':kakaoUrl[r.id]):'https://map.kakao.com/link/search/'+encodeURIComponent(r.name)}" target="_blank" rel="noopener">🟡 See menu on Kakao Map <small>photos &amp; prices</small></a>${nv?`<a class="mlink" href="${esc(nv.url)}" target="_blank" rel="noopener">🟢 See menu on Naver <small>photos &amp; prices</small></a>`:''}</div>`;
   if(db.photos.length) h+=`<div class="ph mph">${db.photos.map(x=>`<img src="${esc(x.url)}" data-full="${esc(x.url)}" alt="">${x.approved?'':''}`).join('')}</div>${db.photos.some(x=>!x.approved)?'<div class="mnote">Your photo is waiting for approval.</div>':''}`;
   const all=r._menuAll, shown=all?list:list.slice(0,10);
   let sec='';
   for(const it of shown){
     if(it.sec&&it.sec!==sec){ sec=it.sec; h+=`<div class="msec">${esc(sec)}</div>`; }
-    const q=(cart[it.ko]||{}).q||0;
+    const q=cart.filter(x=>x.ko===it.ko).reduce((s,x)=>s+x.q,0);
     h+=`<div class="mi"><div><b>${esc(ko?it.ko:it.en)}</b>${ko?'':` <i class="ko">${esc(it.ko)}</i>`}${!ko&&it.d?`<small>${esc(it.d)}</small>`:''}${it.p?`<span class="mp">₩${it.p.toLocaleString()}</span>`:''}</div>
       <div class="qty">${q?`<button data-qm="${esc(it.ko)}">−</button><b>${q}</b>`:''}<button class="add" data-qp="${esc(it.ko)}">+</button></div></div>`;
   }
@@ -702,24 +710,65 @@ function menuHTML(r){
   if(!list.length&&!db.photos.length) h+='<div class="empty">No menu yet. Been here? Add a photo of the menu.</div>';
   h+=`<button class="cta ghostcta" data-menuadd="${r.id}">📷 Add menu photo or link</button>`;
   if(chain) h+=`<div class="mnote">${chain.sig?'Signature dishes of this chain. Check the full menu and prices in the store.':'Chain menu from the official brand website. Prices are recommended prices and can differ by store.'}</div>`;
-  const n=Object.values(cart).reduce((s,x)=>s+x.q,0);
+  h+=`<button class="cta ghostcta" data-ask="${r.id}">❓ Ask the staff a question</button>`;
+  const n=cart.reduce((s,x)=>s+x.q,0);
   if(n) h+=`<button class="cta ordbtn" data-order="${r.id}">🗣️ Show my order to staff (${n})</button>`;
   return h;
 }
+/* ordering: dish options + questions, shown to staff in Korean with English underneath */
+const SPICE=[['','',''],['안 맵게','not spicy'],['덜 맵게','less spicy'],['보통 맵기','regular spicy'],['아주 맵게','extra spicy']].filter(x=>x[0]);
+const REQ=[['고기 적게','less meat'],['고기 빼고','no meat'],['돼지고기 빼고','no pork'],['해산물 빼고','no seafood'],['계란 빼고','no egg'],['고수 빼고','no cilantro'],['파 빼고','no green onion'],['양파 빼고','no onion'],['마늘 빼고','no garlic'],['치즈 추가','extra cheese'],['밥 추가','extra rice'],['포장','to go']];
+const ASK=[['할랄인가요?','Is it halal?'],['돼지고기가 들어가나요?','Does it contain pork?'],['채식 메뉴가 있나요?','Do you have vegetarian dishes?'],['많이 맵나요?','Is it very spicy?'],['1인분이면 한 명이 먹기에 충분한가요?','Is one portion enough for one person?'],['2인분 이상 주문해야 하나요?','Do I have to order 2 portions or more?'],['혼자 먹어도 되나요?','Can I eat here alone?'],['영어 메뉴가 있나요?','Do you have an English menu?'],['추천 메뉴가 뭐예요?','What do you recommend?'],['땅콩 알레르기가 있어요. 괜찮을까요?','I have a peanut allergy. Is it OK?'],['해외 카드 되나요?','Can I pay with a foreign card?'],['물은 셀프인가요?','Is water self-service?'],['화장실이 어디예요?','Where is the restroom?'],['계산은 어디서 해요?','Where do I pay?']];
+const QS={};
+function cartOf(r){ return CART[r.id]=CART[r.id]||[]; }
 function cartChange(r,ko,d){
-  const it=menuItems(r).list.find(x=>x.ko===ko); if(!it) return;
-  const c=CART[r.id]=CART[r.id]||{}; const cur=c[ko]||{...it,q:0}; cur.q+=d;
-  if(cur.q<=0) delete c[ko]; else c[ko]=cur; refreshMenu(r);
+  const c=cartOf(r);
+  if(d<0){ for(let i=c.length-1;i>=0;i--) if(c[i].ko===ko){ c[i].q--; if(c[i].q<=0) c.splice(i,1); break; } refreshMenu(r); return; }
+  const it=menuItems(r).list.find(x=>x.ko===ko); if(it) openDish(r,it);
 }
-function showOrder(r){
-  const c=Object.values(CART[r.id]||{}); if(!c.length) return;
-  const o=document.createElement('div'); o.className='order';
-  o.innerHTML=`<div class="ord-in"><div class="ord-top">주문할게요 🙏</div><div class="ord-sub">I'd like to order</div>
-    ${c.map(x=>`<div class="ord-row"><span>${esc(x.ko)}<small>${esc(x.en)}</small></span><b>${x.q}개</b></div>`).join('')}
+function overlay(html,onclick){ const o=document.createElement('div'); o.className='order'; o.innerHTML=`<div class="ord-in">${html}</div>`; o.addEventListener('click',e=>onclick(e,o)); document.body.appendChild(o); return o; }
+function openDish(r,it){
+  const st={q:1,spice:-1,req:new Set()};
+  const draw=o=>{ o.querySelector('.ord-in').innerHTML=body(); };
+  const body=()=>`<div class="dish-h"><b>${esc(LANG==='ko'?it.ko:it.en)}</b>${LANG==='ko'?'':`<small>${esc(it.ko)}</small>`}</div>
+    <div class="step"><button data-dq="-1">−</button><b>${st.q}</b><button data-dq="1">+</button></div>
+    <h3>Spice level</h3><div class="chips">${SPICE.map((x,i)=>`<button class="chip ${st.spice===i?'on':''}" data-sp="${i}">${esc(x[1])}<small>${x[0]}</small></button>`).join('')}</div>
+    <h3>Requests</h3><div class="chips">${REQ.map((x,i)=>`<button class="chip ${st.req.has(i)?'on':''}" data-rq="${i}">${esc(x[1])}<small>${x[0]}</small></button>`).join('')}</div>
+    <div class="ord-btns"><button data-dcancel>Cancel</button><button data-dadd>Add to order</button></div>`;
+  overlay(body(),(e,o)=>{
+    const t=e.target.closest('button'); if(!t) return;
+    if(t.dataset.dq){ st.q=Math.max(1,st.q+(+t.dataset.dq)); draw(o); }
+    else if(t.dataset.sp){ const i=+t.dataset.sp; st.spice=st.spice===i?-1:i; draw(o); }
+    else if(t.dataset.rq){ const i=+t.dataset.rq; st.req.has(i)?st.req.delete(i):st.req.add(i); draw(o); }
+    else if('dcancel' in t.dataset) o.remove();
+    else if('dadd' in t.dataset){ cartOf(r).push({ko:it.ko,en:it.en,q:st.q,spice:st.spice,req:[...st.req]}); o.remove(); refreshMenu(r); }
+  });
+}
+function openAsk(r){
+  const sel=QS[r.id]=QS[r.id]||new Set();
+  const body=()=>`<div class="dish-h"><b>Questions for the staff</b><small>Pick what you want to ask</small></div>
+    <div class="chips col">${ASK.map((x,i)=>`<button class="chip ${sel.has(i)?'on':''}" data-ak="${i}">${esc(x[1])}<small>${x[0]}</small></button>`).join('')}</div>
+    <div class="ord-btns"><button data-acancel>Close</button><button data-ashow>Show to staff</button></div>`;
+  overlay(body(),(e,o)=>{
+    const t=e.target.closest('button'); if(!t) return;
+    if(t.dataset.ak){ const i=+t.dataset.ak; sel.has(i)?sel.delete(i):sel.add(i); o.querySelector('.ord-in').innerHTML=body(); }
+    else if('acancel' in t.dataset) o.remove();
+    else if('ashow' in t.dataset){ o.remove(); showOrder(r,true); }
+  });
+}
+function lineKo(x){ const o=[x.spice>=0?SPICE[x.spice][0]:null,...x.req.map(i=>REQ[i][0])].filter(Boolean); return o.join(', '); }
+function lineEn(x){ const o=[x.spice>=0?SPICE[x.spice][1]:null,...x.req.map(i=>REQ[i][1])].filter(Boolean); return o.join(', '); }
+function showOrder(r,onlyQ){
+  const c=onlyQ?[]:cartOf(r), q=[...(QS[r.id]||[])];
+  if(!c.length&&!q.length) return;
+  overlay(`${c.length?`<div class="ord-top">주문할게요 🙏</div><div class="ord-sub">I'd like to order</div>
+    ${c.map(x=>`<div class="ord-row"><span>${esc(x.ko)}${lineKo(x)?`<em>${esc(lineKo(x))}</em>`:''}<small>${esc(x.en)}${lineEn(x)?' · '+esc(lineEn(x)):''}</small></span><b>${x.q}개</b></div>`).join('')}`:''}
+    ${q.length?`<div class="ord-top" style="font-size:26px;margin-top:${c.length?24:0}px">질문이 있어요 🙋</div><div class="ord-sub">I have a question</div>${q.map(i=>`<div class="ord-q">${esc(ASK[i][0])}<small>${esc(ASK[i][1])}</small></div>`).join('')}`:''}
     <div class="ord-note">감사합니다! 😊</div>
-    <div class="ord-btns"><button data-ordclear>Clear</button><button data-ordclose>Done</button></div></div>`;
-  o.addEventListener('click',e=>{ if(e.target.closest('[data-ordclear]')){ delete CART[r.id]; refreshMenu(r); o.remove(); } else if(e.target.closest('[data-ordclose]')) o.remove(); });
-  document.body.appendChild(o);
+    <div class="ord-btns"><button data-ordclear>Clear</button><button data-ordclose>Done</button></div>`,(e,o)=>{
+      if(e.target.closest('[data-ordclear]')){ if(onlyQ) delete QS[r.id]; else { delete CART[r.id]; delete QS[r.id]; } refreshMenu(r); o.remove(); }
+      else if(e.target.closest('[data-ordclose]')) o.remove();
+    });
 }
 let mform=null;
 function openMenuAdd(r){
@@ -787,6 +836,7 @@ function openKakaoMenu(r){
 let openR=null;
 function openPlace(r){
   openR=r;
+  if(!kakaoUrl[r.id]) findKakao(r).then(u=>{ kakaoUrl[r.id]=u; const a=document.getElementById('kkLink'); if(a&&openR===r) a.href=u.includes('place.map.kakao.com')?u+'#menuInfo':u; });
   const l=links(r), c=CATS[r.cat];
   $('placeSheet').innerHTML=`
     <div class="grab"></div><button class="close" data-close>×</button>
@@ -1266,7 +1316,7 @@ document.addEventListener('click',e=>{
   const ma=e.target.closest('[data-menuall]'); if(ma){ const r=byId[ma.dataset.menuall]; r._menuAll=true; $('menuBox').innerHTML=menuHTML(r); return; }
   const qp=e.target.closest('[data-qp]'); if(qp){ cartChange(openR,qp.dataset.qp,1); return; }
   const qm=e.target.closest('[data-qm]'); if(qm){ cartChange(openR,qm.dataset.qm,-1); return; }
-  const km=e.target.closest('[data-kmenu]'); if(km){ openKakaoMenu(openR); return; }
+  const ak=e.target.closest('[data-ask]'); if(ak){ openAsk(openR); return; }
   const od=e.target.closest('[data-order]'); if(od){ showOrder(openR); return; }
   const mad=e.target.closest('[data-menuadd]'); if(mad){ openMenuAdd(openR); return; }
   const a=e.target.closest('[data-all]'); if(a){ const r=byId[a.dataset.all]; r._all=true; openPlace(r); }
