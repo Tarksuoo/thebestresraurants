@@ -779,9 +779,10 @@ function flash(t){const b=$('banner');b.textContent=t;b.hidden=false;setTimeout(
 const COUNTRIES=[['🇹🇷','Turkey'],['🇺🇸','USA'],['🇬🇧','UK'],['🇩🇪','Germany'],['🇫🇷','France'],['🇮🇹','Italy'],['🇪🇸','Spain'],['🇳🇱','Netherlands'],['🇸🇪','Sweden'],['🇷🇺','Russia'],['🇺🇦','Ukraine'],['🇵🇱','Poland'],['🇨🇦','Canada'],['🇦🇺','Australia'],['🇧🇷','Brazil'],['🇲🇽','Mexico'],['🇯🇵','Japan'],['🇨🇳','China'],['🇹🇼','Taiwan'],['🇭🇰','Hong Kong'],['🇻🇳','Vietnam'],['🇹🇭','Thailand'],['🇵🇭','Philippines'],['🇮🇩','Indonesia'],['🇲🇾','Malaysia'],['🇸🇬','Singapore'],['🇮🇳','India'],['🇵🇰','Pakistan'],['🇧🇩','Bangladesh'],['🇺🇿','Uzbekistan'],['🇰🇿','Kazakhstan'],['🇦🇿','Azerbaijan'],['🇸🇦','Saudi Arabia'],['🇦🇪','UAE'],['🇪🇬','Egypt'],['🇲🇦','Morocco'],['🇳🇬','Nigeria'],['🇿🇦','South Africa'],['🇰🇷','Korea'],['🌍','Other']];
 const FLAG=Object.fromEntries(COUNTRIES.map(([f,n])=>[n,f]));
 let ROWS=[], REVIEWED=0, COUNTS={};
-/* Gold tick: add usernames here (lowercase) */
-const INSIDERS=['samanta','tarksuoo'];
-const isInsider=p=>!!p&&(!!p.verified||INSIDERS.includes(String(p.username||'').toLowerCase()));
+/* Gold tick: exact usernames (case-sensitive) */
+const INSIDERS=['samanta','Tarksuoo'];
+const lookAlike=u=>INSIDERS.some(n=>n.toLowerCase()===String(u).toLowerCase()&&n!==u)||ROWS.some(x=>x.profiles&&x.profiles.username&&x.profiles.username.toLowerCase()===String(u).toLowerCase());
+const isInsider=p=>!!p&&(!!p.verified||INSIDERS.includes(String(p.username||'')));
 const sb = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {auth:{persistSession:true,autoRefreshToken:true}}) : null;
 const fmtDate=s=>{try{return new Date(s).toLocaleDateString('en-US',{month:'short',year:'numeric'})}catch(e){return ''}};
 
@@ -920,6 +921,7 @@ function renderAuth(){
 function readAuth(){ if($('aEmail')) auth.email=$('aEmail').value.trim(); if($('aUser')) auth.username=$('aUser').value.trim(); if($('aCountry')) auth.country=$('aCountry').value; }
 function checkProfileFields(){
   if(!/^[A-Za-z0-9_.]{3,20}$/.test(auth.username)) return 'Username: 3–20 letters, numbers, _ or .';
+  if(lookAlike(auth.username)) return 'That username is taken. Try another one.';
   if(!auth.country) return 'Please choose your country.';
   return '';
 }
@@ -942,6 +944,7 @@ $('authSheet').addEventListener('click',async e=>{
       if(e.target.id==='pSaveProfile'){
         const u=$('pUser').value.trim(), c=$('pCountry').value;
         if(!/^[A-Za-z0-9_.]{3,20}$/.test(u)){ pf.err='Username: 3–20 letters, numbers, _ or .'; renderAuth(); return; }
+        if(u!==profile.username&&lookAlike(u)){ pf.err='That username is taken. Try another one.'; renderAuth(); return; }
         if(!c){ pf.err='Please choose your country.'; renderAuth(); return; }
         pf.busy=true; renderAuth();
         const {data,error}=await sb.from('profiles').update({username:u,country:c}).eq('id',session.user.id).select().single();
