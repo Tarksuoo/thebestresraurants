@@ -662,7 +662,7 @@ function links(r){
   return {
     naverq:`https://map.naver.com/v5/search/${encodeURIComponent(r.name)}?c=${r.lon},${r.lat},17,0,0,0,dh`,
     naver:`https://map.naver.com/p/directions/-/${r.lon},${r.lat},${encodeURIComponent(r.name)},,ADDRESS_POI/-/walk`,
-    kakao:`https://map.kakao.com/link/to/${encodeURIComponent(r.name)},${r.lat},${r.lon}`,
+    kakao:kakaoApp(`route?ep=${r.lat},${r.lon}&by=FOOT`,`https://map.kakao.com/link/to/${encodeURIComponent(r.name)},${r.lat},${r.lon}`),
     google:`https://www.google.com/maps/dir/?api=1&destination=${r.lat},${r.lon}&travelmode=walking`
   };
 }
@@ -697,7 +697,7 @@ function menuHTML(r){
   loadMenuDb(r);
   const ko=LANG==='ko', db=MDB[r.id]||{photos:[],links:[]}, {list,chain}=menuItems(r), cart=CART[r.id]||[];
   const lk=db.links||[], nv=lk.filter(x=>/naver\.(me|com)/i.test(x.url)).slice(-1)[0], own=lk.filter(x=>!/naver\.(me|com)/i.test(x.url)).slice(-1)[0];
-  let h=`<div class="mlinks">${own?`<a class="mlink" href="${esc(own.url)}" target="_blank" rel="noopener nofollow">🔗 Open online menu <small>restaurant's website</small></a>`:''}<a class="mlink kk" id="kkLink" data-kk="1" href="${kakaoUrl[r.id]?(kakaoUrl[r.id].includes('place.map.kakao.com')?kakaoUrl[r.id]+'#menuInfo':kakaoUrl[r.id]):'https://map.kakao.com/link/search/'+encodeURIComponent(r.name)}" rel="noopener">🟡 See menu on Kakao Map <small>photos &amp; prices</small></a>${nv?`<a class="mlink" href="${esc(nv.url)}" target="_blank" rel="noopener">🟢 See menu on Naver <small>photos &amp; prices</small></a>`:''}</div>`;
+  let h=`<div class="mlinks">${own?`<a class="mlink" href="${esc(own.url)}" target="_blank" rel="noopener nofollow">🔗 Open online menu <small>restaurant's website</small></a>`:''}<a class="mlink kk" id="kkLink" data-kk="1" href="${kakaoPlaceLink(r)}" rel="noopener">🟡 See menu on Kakao Map <small>photos &amp; prices</small></a>${nv?`<a class="mlink" href="${esc(nv.url)}" target="_blank" rel="noopener">🟢 See menu on Naver <small>photos &amp; prices</small></a>`:''}</div>`;
   if(db.photos.length) h+=`<div class="ph mph">${db.photos.map(x=>`<img src="${esc(x.url)}" data-full="${esc(x.url)}" alt="">${x.approved?'':''}`).join('')}</div>${db.photos.some(x=>!x.approved)?'<div class="mnote">Your photo is waiting for approval.</div>':''}`;
   const all=r._menuAll, shown=all?list:list.slice(0,10);
   let sec='';
@@ -718,7 +718,15 @@ function menuHTML(r){
 }
 /* ordering: dish options + questions, shown to staff in Korean with English underneath */
 const SPICE=[['안 맵게','not spicy','안 맵게 해 주'],['덜 맵게','less spicy','덜 맵게 해 주'],['보통 맵기','regular spicy','보통 맵기로 해 주'],['아주 맵게','extra spicy','아주 맵게 해 주']];
-const REQ=[['고기 적게','less meat','고기는 적게 넣어 주'],['고기 빼고','no meat','고기는 빼 주'],['돼지고기 빼고','no pork','돼지고기는 빼 주'],['해산물 빼고','no seafood','해산물은 빼 주'],['계란 빼고','no egg','계란은 빼 주'],['고수 빼고','no cilantro','고수는 빼 주'],['파 빼고','no green onion','파는 빼 주'],['양파 빼고','no onion','양파는 빼 주'],['마늘 빼고','no garlic','마늘은 빼 주'],['치즈 추가','extra cheese','치즈 추가해 주'],['밥 추가','extra rice','밥 추가해 주'],['포장','to go','포장해 주']];
+const REQ=[['돼지고기 빼고','no pork','돼지고기는 빼 주'],['해산물 빼고','no seafood','해산물은 빼 주'],['고수 빼고','no cilantro','고수는 빼 주'],['양파 빼고','no onion','양파는 빼 주'],['피클 빼고','no pickles','피클은 빼 주'],['포장','to go','포장해 주'],['덜 짜게','less salty','덜 짜게 해 주']];
+const SALT=6;
+/* which options make sense for a dish */
+function dishKind(it){ const t=it.ko+' '+(it.en||'')+' '+(it.sec||'');
+  if(/버거|burger|샌드|sandwich|토스트|toast|wrap|랩|핫도그/i.test(t)) return 'burger';
+  if(/피자|pizza|치킨|chicken|통닭|닭강정|파스타|pasta|돈까스|돈가스|cutlet|감자|fries|콜라|사이다|음료|drink|맥주|beer|소주|soju|아이스|ice|디저트|타르트|케이크|볼$/i.test(t)) return 'plain';
+  return 'korean'; }
+function spicyOK(it){ return /찌개|떡볶이|라볶이|라면|짬뽕|마라|닭갈비|제육|볶음|낙지|쭈꾸미|국밥|해장국|순두부|부대|매운|김치|비빔|짜글|탕|불닭|양념|전골|쫄면|냉면|닭발|곱창|막창|아구|stew|spicy|tteokbokki|ramyeon|jjamppong|malatang/i.test(it.ko+' '+(it.en||'')); }
+function reqFor(it){ const k=dishKind(it); if(k==='burger') return [3,4,5]; if(k==='plain') return [5]; const o=[0,1,2]; if(/찌개|국|탕|해장|볶음|전골|stew|soup/i.test(it.ko+' '+(it.en||''))) o.unshift(SALT); o.push(5); return o; }
 const ASK=[['할랄인가요?','Is it halal?'],['돼지고기가 들어가나요?','Does it contain pork?'],['채식 메뉴가 있나요?','Do you have vegetarian dishes?'],['많이 맵나요?','Is it very spicy?'],['1인분이면 한 명이 먹기에 충분한가요?','Is one portion enough for one person?'],['2인분 이상 주문해야 하나요?','Do I have to order 2 portions or more?'],['혼자 먹어도 되나요?','Can I eat here alone?'],['영어 메뉴가 있나요?','Do you have an English menu?'],['추천 메뉴가 뭐예요?','What do you recommend?'],['땅콩 알레르기가 있어요. 괜찮을까요?','I have a peanut allergy. Is it OK?'],['해외 카드 되나요?','Can I pay with a foreign card?'],['물은 셀프인가요?','Is water self-service?'],['화장실이 어디예요?','Where is the restroom?'],['계산은 어디서 해요?','Where do I pay?']];
 const QS={};
 function cartOf(r){ return CART[r.id]=CART[r.id]||[]; }
@@ -733,8 +741,8 @@ function openDish(r,it){
   const draw=o=>{ o.querySelector('.ord-in').innerHTML=body(); };
   const body=()=>`<div class="dish-h"><b>${esc(LANG==='ko'?it.ko:it.en)}</b>${LANG==='ko'?'':`<small>${esc(it.ko)}</small>`}</div>
     <div class="step"><button data-dq="-1">−</button><b>${st.q}</b><button data-dq="1">+</button></div>
-    <h3>Spice level</h3><div class="chips">${SPICE.map((x,i)=>`<button class="chip ${st.spice===i?'on':''}" data-sp="${i}">${esc(x[1])}<small>${x[0]}</small></button>`).join('')}</div>
-    <h3>Requests</h3><div class="chips">${REQ.map((x,i)=>`<button class="chip ${st.req.has(i)?'on':''}" data-rq="${i}">${esc(x[1])}<small>${x[0]}</small></button>`).join('')}</div>
+    ${spicyOK(it)?`<h3>Spice level</h3><div class="chips">${SPICE.map((x,i)=>`<button class="chip ${st.spice===i?'on':''}" data-sp="${i}">${esc(x[1])}<small>${x[0]}</small></button>`).join('')}</div>`:''}
+    <h3>Requests</h3><div class="chips">${reqFor(it).map(i=>`<button class="chip ${st.req.has(i)?'on':''}" data-rq="${i}">${esc(REQ[i][1])}<small>${REQ[i][0]}</small></button>`).join('')}</div>
     <div class="ord-btns"><button data-dcancel>Cancel</button><button data-dadd>Add to order</button></div>`;
   overlay(body(),(e,o)=>{
     const t=e.target.closest('button'); if(!t) return;
@@ -832,6 +840,14 @@ function findKakao(r){
     },{...near,radius:300});
   })).catch(()=>fb);
 }
+const IS_AND=/android/i.test(navigator.userAgent), IS_IOS=/iphone|ipad|ipod/i.test(navigator.userAgent);
+function kakaoApp(path,web){ /* open the KakaoMap app; if it is not installed go to the store */
+  if(IS_AND) return `intent://${path}#Intent;scheme=kakaomap;package=net.daum.android.map;end`;
+  if(IS_IOS) return `kakaomap://${path}`;
+  return web; }
+function kakaoPlaceLink(r){ const u=kakaoUrl[r.id], id=u&&(u.match(/place\.map\.kakao\.com\/(\d+)/)||[])[1];
+  return id?kakaoApp('place?id='+id,'https://place.map.kakao.com/'+id+'#menuInfo'):kakaoApp('search?q='+encodeURIComponent(r.name)+'&p='+r.lat+','+r.lon,'https://map.kakao.com/link/search/'+encodeURIComponent(r.name)); }
+if(IS_IOS) document.addEventListener('click',e=>{ const a=e.target.closest('a[href^="kakaomap://"]'); if(!a) return; const t=setTimeout(()=>{ if(!document.hidden) location.href='https://apps.apple.com/kr/app/id304608425'; },1600); document.addEventListener('visibilitychange',()=>clearTimeout(t),{once:true}); });
 function openKakaoMenu(r){
   const w=window.open('about:blank','_blank');
   findKakao(r).then(u=>{ const url=u.includes('place.map.kakao.com')?u+'#menuInfo':u; if(w) w.location.href=url; else location.href=url; });
@@ -839,7 +855,7 @@ function openKakaoMenu(r){
 let openR=null;
 function openPlace(r){
   openR=r;
-  if(!kakaoUrl[r.id]) findKakao(r).then(u=>{ kakaoUrl[r.id]=u; const a=document.getElementById('kkLink'); if(a&&openR===r) a.href=u.includes('place.map.kakao.com')?u+'#menuInfo':u; });
+  if(!kakaoUrl[r.id]) findKakao(r).then(u=>{ kakaoUrl[r.id]=u; const a=document.getElementById('kkLink'); if(a&&openR===r) a.href=kakaoPlaceLink(r); });
   const l=links(r), c=CATS[r.cat];
   $('placeSheet').innerHTML=`
     <div class="grab"></div><button class="close" data-close>×</button>
