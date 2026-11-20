@@ -176,6 +176,7 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .stars.on{color:#f5a623}
 .vtick{display:inline-grid;place-items:center;width:15px;height:15px;border-radius:50%;background:#1d9bf0;color:#fff!important;font-size:10px!important;font-weight:900;margin-left:3px;vertical-align:1px}
 .trusttag{background:#eef4ff;color:#1d5fd0!important;font-size:11px!important;font-weight:700;padding:1px 7px;border-radius:999px;margin-left:4px}
+.vtick.gold{background:linear-gradient(135deg,#f7c948,#d99a00)}
 .avimg{width:100%;height:100%;object-fit:cover;border-radius:50%}
 .av{overflow:hidden}.me{overflow:hidden}
 .pf-top{display:flex;gap:16px;align-items:center;margin-top:6px}
@@ -637,7 +638,7 @@ function openPlace(r){
     <div class="empty">Menu coming soon.</div>
     <h3>Reviews</h3>
     ${(r.mine&&r.mine.length)?r.mine.map(v=>`<div class="rev pending"><div class="rev-h"><span class="av">${esc(v.who[0])}</span><div><b>${esc(v.who)}</b> <span class="pend">Waiting for approval</span><small>Only you can see this · ${v.date}</small></div><span class="rs">${'★'.repeat(v.stars)}<i>${'★'.repeat(5-v.stars)}</i></span></div>${v.text?`<p>${esc(v.text)}</p>`:''}</div>`).join(''):''}
-    ${r.rv?(r._all?r.rv.reviews:r.rv.reviews.slice(0,4)).map(v=>`<div class="rev"><div class="rev-h"><span class="av">${v.avatar?`<img class="avimg" src="${esc(v.avatar)}" alt="">`:esc(v.who[0]||'?')}</span><div><b>${esc(v.who)}</b>${v.verified?'<span class="vtick" title="Verified reviewer">✓</span>':v.cnt>=20?'<span class="trusttag">Trusted</span>':''}${v.team?' <span class="teamtag">Team</span>':''} <span>${v.flag} ${esc(v.country)}</span><small>${v.date}</small></div><span class="rs">${'★'.repeat(v.stars)}<i>${'★'.repeat(5-v.stars)}</i></span></div>${v.text?`<p>${esc(v.text)}</p>`:''}${v.photos.length?`<div class="ph">${v.photos.map(u=>`<img src="${esc(u)}" loading="lazy" data-full="${esc(u)}" alt="">`).join('')}</div>`:''}</div>`).join('')+(!r._all&&r.rv.reviews.length>4?`<button class="more" data-all="${r.id}" style="width:100%">See all ${r.rv.count} reviews</button>`:''):((r.mine&&r.mine.length)?'':'<div class="empty">No tourist has reviewed this place yet. Been here? Your review helps the next traveler.</div>')}
+    ${r.rv?(r._all?r.rv.reviews:r.rv.reviews.slice(0,4)).map(v=>`<div class="rev"><div class="rev-h"><span class="av">${v.avatar?`<img class="avimg" src="${esc(v.avatar)}" alt="">`:esc(v.who[0]||'?')}</span><div><b>${esc(v.who)}</b>${v.insider?'<span class="vtick gold" data-badge="Seoul Eats Insider · hand-picked by our team">✓</span>':v.verified?'<span class="vtick" data-badge="Verified reviewer · 100+ published reviews">✓</span>':v.cnt>=20?'<span class="trusttag">Trusted</span>':''}${v.team?' <span class="teamtag">Team</span>':''} <span>${v.flag} ${esc(v.country)}</span><small>${v.date}</small></div><span class="rs">${'★'.repeat(v.stars)}<i>${'★'.repeat(5-v.stars)}</i></span></div>${v.text?`<p>${esc(v.text)}</p>`:''}${v.photos.length?`<div class="ph">${v.photos.map(u=>`<img src="${esc(u)}" loading="lazy" data-full="${esc(u)}" alt="">`).join('')}</div>`:''}</div>`).join('')+(!r._all&&r.rv.reviews.length>4?`<button class="more" data-all="${r.id}" style="width:100%">See all ${r.rv.count} reviews</button>`:''):((r.mine&&r.mine.length)?'':'<div class="empty">No tourist has reviewed this place yet. Been here? Your review helps the next traveler.</div>')}
     <button class="cta" data-review="${r.id}">Write a review</button>
     <h3>Address</h3>
     <div class="sub" style="font-size:14px;line-height:1.5">${esc(r.addr)}, ${esc(r.gu.ko)}${r.floor&&r.floor!=='1'?` · Floor ${esc(r.floor)}`:''}</div>
@@ -783,7 +784,7 @@ const fmtDate=s=>{try{return new Date(s).toLocaleDateString('en-US',{month:'shor
 function toView(x){
   const name=(x.profiles&&x.profiles.username)||x.author_name||'Traveler', c=(x.profiles&&x.profiles.country)||x.country||'';
   const uid=x.user_id, cnt=uid?(COUNTS[uid]||0):0;
-  return {cnt,avatar:(x.profiles&&x.profiles.avatar_url)||'',verified:!!(x.profiles&&x.profiles.verified)||cnt>=100,who:name,flag:FLAG[c]||'🌍',country:c,date:fmtDate(x.created_at),stars:x.rating,text:x.body||'',team:x.is_team,photos:x.photos||[],pending:!x.approved};
+  return {cnt,avatar:(x.profiles&&x.profiles.avatar_url)||'',insider:!!(x.profiles&&x.profiles.verified),verified:cnt>=100,who:name,flag:FLAG[c]||'🌍',country:c,date:fmtDate(x.created_at),stars:x.rating,text:x.body||'',team:x.is_team,photos:x.photos||[],pending:!x.approved};
 }
 function aggregate(){
   for(const r of R){ delete r.rv; r.mine=[]; }
@@ -840,8 +841,9 @@ function myStats(){
   const ok=mine.filter(x=>x.approved);
   return {ok:ok.length,pending:mine.length-ok.length,list:mine};
 }
-function level(n,verified){
-  if(verified||n>=100) return {name:'Verified reviewer',tick:true,next:null};
+function level(n,insider){
+  if(insider) return {name:'Seoul Eats Insider',tick:'gold',next:null,txt:'gold tick, hand-picked by the team'};
+  if(n>=100) return {name:'Verified reviewer',tick:'blue',next:null,txt:'blue tick on all your reviews'};
   if(n>=20) return {name:'Trusted reviewer',next:100};
   if(n>=5) return {name:'Regular reviewer',next:20};
   return {name:'New reviewer',next:5};
@@ -865,10 +867,10 @@ function profileHTML(){
   if(pf.view==='reviews') return head+back+`<h2>My reviews</h2>`+(st.list.length?st.list.map(x=>{const rr=byId[x.restaurant_id];return `<div class="myrev"><b>${esc(rr?rr.name:'Restaurant')}</b> ${'★'.repeat(x.rating)}<br><small>${x.approved?'Published':'Waiting for approval'} · ${fmtDate(x.created_at)}</small></div>`}).join(''):'<div class="empty">You have not written any reviews yet.</div>');
   const pct=lv.next?Math.min(100,Math.round(st.ok/lv.next*100)):100;
   return head+`<div class="pf-top"><label class="pf-wrap"><div class="pf-av">${p.avatar_url?`<img class="avimg" src="${esc(p.avatar_url)}" alt="">`:esc(p.username[0].toUpperCase())}</div><span class="pf-cam">📷</span><input id="pAvatar" type="file" accept="image/*" hidden></label>
-    <div><div class="pf-name">${esc(p.username)}${lv.tick?'<span class="vtick" style="width:19px;height:19px;font-size:12px">✓</span>':''}</div><div class="sub">${FLAG[p.country]||'🌍'} ${esc(p.country)}</div><div class="sub" style="font-size:12.5px">${pf.busy&&pf.view==='main'?'Uploading photo…':'Tap the photo to change it'}</div></div></div>
+    <div><div class="pf-name">${esc(p.username)}${lv.tick?`<span class="vtick ${lv.tick==='gold'?'gold':''}" style="width:19px;height:19px;font-size:12px">✓</span>`:''}</div><div class="sub">${FLAG[p.country]||'🌍'} ${esc(p.country)}</div><div class="sub" style="font-size:12.5px">${pf.busy&&pf.view==='main'?'Uploading photo…':'Tap the photo to change it'}</div></div></div>
     ${msg}
     <div class="pf-stats"><div><b>${st.ok}</b>Published</div><div><b>${st.pending}</b>Waiting</div></div>
-    <div class="lvl"><b>${lv.name}</b>${lv.next?` · ${lv.next-st.ok} more published review${lv.next-st.ok>1?'s':''} to the next level`:' · blue tick on all your reviews'}<div class="bar"><i style="width:${pct}%"></i></div></div>
+    <div class="lvl"><b>${lv.name}</b>${lv.next?` · ${lv.next-st.ok} more published review${lv.next-st.ok>1?'s':''} to the next level`:' · '+lv.txt}<div class="bar"><i style="width:${pct}%"></i></div></div>
     <h3>Account</h3>
     <button class="pf-row" data-pf="reviews">My reviews <span>›</span></button>
     <button class="pf-row" data-pf="edit">Edit username &amp; country <span>›</span></button>
@@ -926,6 +928,7 @@ async function finishLogin(){
   acctIcon(); await loadReviews();
   if(profile && afterLogin){ const f=afterLogin; afterLogin=null; f(); } else if(profile){ close(); }
 }
+document.addEventListener('click',e=>{ const b=e.target.closest('[data-badge]'); if(b){ e.stopPropagation(); flash(b.dataset.badge); } },true);
 $('authSheet').addEventListener('change',e=>{ if(e.target.id==='pAvatar'&&e.target.files[0]) uploadAvatar(e.target.files[0]); });
 $('authSheet').addEventListener('click',async e=>{
   const pv=e.target.closest('[data-pf]'); if(pv){ pf.view=pv.dataset.pf; pf.err=''; pf.ok=''; renderAuth(); $('authSheet').scrollTop=0; return; }
