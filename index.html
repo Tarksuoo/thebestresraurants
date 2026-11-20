@@ -146,6 +146,7 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .ord-btns{display:flex;gap:10px;margin-top:26px}.ord-btns button{flex:1;height:50px;border-radius:12px;background:#f2f4f3;font-weight:700;font-size:16px}.ord-btns button:last-child{background:var(--ink);color:#fff}
 .mlinks{display:flex;flex-direction:column;gap:8px;margin-bottom:6px}
 .mlink{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-radius:12px;background:#f2f4f3;font-weight:700;color:var(--ink);text-decoration:none;font-size:14.5px}
+.mlink.kk{width:100%;text-align:left}
 .mlink small{font-weight:500;color:var(--muted);font-size:12px}
 .msec{font-size:12px;font-weight:800;color:var(--green);margin:14px 0 4px;letter-spacing:.02em}
 .mi{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid var(--line);font-size:14.5px}
@@ -251,7 +252,7 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 </style>
 </head>
 <body>
-<script src="i18n.js?v=10"></script>
+<script src="i18n.js?v=11"></script>
 <script src="data/seoul.js?v=2026-09"></script>
 <div id="mapwrap"><div id="map"></div></div>
 
@@ -687,7 +688,7 @@ function menuHTML(r){
   loadMenuDb(r);
   const ko=LANG==='ko', db=MDB[r.id]||{photos:[],links:[]}, {list,chain}=menuItems(r), cart=CART[r.id]||{};
   const lk=db.links||[], nv=lk.filter(x=>/naver\.(me|com)/i.test(x.url)).slice(-1)[0], own=lk.filter(x=>!/naver\.(me|com)/i.test(x.url)).slice(-1)[0];
-  let h=`<div class="mlinks">${own?`<a class="mlink" href="${esc(own.url)}" target="_blank" rel="noopener nofollow">🔗 Open online menu <small>restaurant's website</small></a>`:''}<a class="mlink" href="${nv?esc(nv.url):links(r).naverq}" target="_blank" rel="noopener">🟢 See menu on Naver <small>photos &amp; prices</small></a></div>`;
+  let h=`<div class="mlinks">${own?`<a class="mlink" href="${esc(own.url)}" target="_blank" rel="noopener nofollow">🔗 Open online menu <small>restaurant's website</small></a>`:''}<button class="mlink kk" data-kmenu="${r.id}">🟡 See menu on Kakao Map <small>photos &amp; prices</small></button>${nv?`<a class="mlink" href="${esc(nv.url)}" target="_blank" rel="noopener">🟢 See menu on Naver <small>photos &amp; prices</small></a>`:''}</div>`;
   if(db.photos.length) h+=`<div class="ph mph">${db.photos.map(x=>`<img src="${esc(x.url)}" data-full="${esc(x.url)}" alt="">${x.approved?'':''}`).join('')}</div>${db.photos.some(x=>!x.approved)?'<div class="mnote">Your photo is waiting for approval.</div>':''}`;
   const all=r._menuAll, shown=all?list:list.slice(0,10);
   let sec='';
@@ -762,6 +763,27 @@ $('reviewSheet').addEventListener('click',async e=>{
     $('reviewSheet').innerHTML=`<div class="grab"></div><button class="close" data-close>×</button><h2>Thank you!</h2><div class="ok">Your menu was sent.<br>It will appear after it is approved, usually within a day.</div>`;
   }catch(err){ console.error(err); f.sending=false; f.err=/menu_|relation|schema/i.test(err.message||'')?'Menu uploads are not switched on yet. Please try again later.':'Could not send. Check your connection and try again.'; renderMenuAdd(); }
 });
+/* Kakao Places: find this exact restaurant and open its Kakao Map page */
+const KAKAO_KEY='de14483b802bea5976b83a10592e1a89';
+let kakaoP=null;
+function loadKakao(){ return kakaoP||(kakaoP=new Promise((ok,no)=>{ const sc=document.createElement('script'); sc.src=`https://dapi.kakao.com/v2/maps/sdk.js?appkey=${KAKAO_KEY}&libraries=services&autoload=false`; sc.onload=()=>window.kakao.maps.load(()=>ok(new kakao.maps.services.Places())); sc.onerror=no; document.head.appendChild(sc); setTimeout(()=>no(new Error('timeout')),8000); })); }
+const kakaoUrl={};
+function findKakao(r){
+  if(kakaoUrl[r.id]) return Promise.resolve(kakaoUrl[r.id]);
+  const fb='https://map.kakao.com/link/search/'+encodeURIComponent(r.name);
+  return loadKakao().then(P=>new Promise(ok=>{
+    const S=kakao.maps.services, near={x:r.lon,y:r.lat,sort:S.SortBy.DISTANCE};
+    const pick=d=>d&&d.length&&+d[0].distance<=150?d[0].place_url:null;
+    P.keywordSearch(r.name.replace(/(본점|직영점|\S+점)$/,'')||r.name,(d,st)=>{
+      const u=st===S.Status.OK&&pick(d); if(u){ ok(kakaoUrl[r.id]=u); return; }
+      P.categorySearch('FD6',(d2,st2)=>{ const u2=st2===S.Status.OK&&d2.length&&+d2[0].distance<=25?d2[0].place_url:null; ok(u2?(kakaoUrl[r.id]=u2):fb); },{...near,radius:40});
+    },{...near,radius:300});
+  })).catch(()=>fb);
+}
+function openKakaoMenu(r){
+  const w=window.open('about:blank','_blank');
+  findKakao(r).then(u=>{ const url=u.includes('place.map.kakao.com')?u+'#menuInfo':u; if(w) w.location.href=url; else location.href=url; });
+}
 let openR=null;
 function openPlace(r){
   openR=r;
@@ -1244,6 +1266,7 @@ document.addEventListener('click',e=>{
   const ma=e.target.closest('[data-menuall]'); if(ma){ const r=byId[ma.dataset.menuall]; r._menuAll=true; $('menuBox').innerHTML=menuHTML(r); return; }
   const qp=e.target.closest('[data-qp]'); if(qp){ cartChange(openR,qp.dataset.qp,1); return; }
   const qm=e.target.closest('[data-qm]'); if(qm){ cartChange(openR,qm.dataset.qm,-1); return; }
+  const km=e.target.closest('[data-kmenu]'); if(km){ openKakaoMenu(openR); return; }
   const od=e.target.closest('[data-order]'); if(od){ showOrder(openR); return; }
   const mad=e.target.closest('[data-menuadd]'); if(mad){ openMenuAdd(openR); return; }
   const a=e.target.closest('[data-all]'); if(a){ const r=byId[a.dataset.all]; r._all=true; openPlace(r); }
