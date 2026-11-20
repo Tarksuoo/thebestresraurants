@@ -9,7 +9,29 @@ window.setLang=l=>{ try{ localStorage.setItem('he_lang',l); }catch(e){} location
 const B=D.BRANDS.slice().sort((a,b)=>b[0].length-a[0].length), bc={};
 window.brandEn=n=>{ if(n in bc) return bc[n]; let v=null; for(const [k,e] of B){ if(n.startsWith(k)){ v=e; break; } } return bc[n]=v; };
 window.trK=t=>lang==='ko'?(D.KO[t]||D.PLACES[t]||''):'';
-window.nm=r=>{ if(!r) return ''; if(lang==='en'){ const b=brandEn(r.name); if(b) return b; } return r.name; };
+
+const INI=['g','kk','n','d','tt','r','m','b','pp','s','ss','','j','jj','ch','k','t','p','h'];
+const MED=['a','ae','ya','yae','eo','e','yeo','ye','o','wa','wae','oe','yo','u','wo','we','wi','yu','eu','ui','i'];
+const FIN=['','k','k','k','n','n','n','t','l','k','m','l','l','l','p','l','m','p','p','t','t','ng','t','t','k','t','p','t'];
+const FIN_V=['','g','kk','ks','n','nj','nh','d','r','lg','lm','lb','ls','lt','lp','lh','m','b','ps','s','ss','ng','j','ch','k','t','p','h'];
+function romRun(w){
+  const S=[...w].map(c=>{const x=c.charCodeAt(0)-0xAC00;return [Math.floor(x/588),Math.floor((x%588)/28),x%28];}), out=[];
+  S.forEach(([a,b,f],i)=>{
+    let ini=INI[a];
+    if(i>0){ const pf=S[i-1][2], p=FIN[pf];
+      if(a===11){ if(p&&out[out.length-1].endsWith(p)) out[out.length-1]=out[out.length-1].slice(0,-p.length); ini=pf===21?'':FIN_V[pf]; if(pf===21) out[out.length-1]+='ng'; if(pf===27) ini=''; }
+      else if(a===5){ if(p==='n'){ out[out.length-1]=out[out.length-1].slice(0,-1)+'l'; ini='l'; } else if(p==='l') ini='l'; else if(['k','p','t','m','ng'].includes(p)){ ini='n'; if(['k','p','t'].includes(p)) out[out.length-1]=out[out.length-1].slice(0,-1)+{k:'ng',p:'m',t:'n'}[p]; } }
+      else if(a===2||a===6){ if(['k','p','t'].includes(p)) out[out.length-1]=out[out.length-1].slice(0,-1)+{k:'ng',p:'m',t:'n'}[p]; else if(p==='l'&&a===2) ini='l'; }
+      else if(a===18&&['k','t','p'].includes(p)){ out[out.length-1]=out[out.length-1].slice(0,-1); ini=p; }
+    }
+    out.push(ini+MED[b]+FIN[f]);
+  });
+  const r=out.join(''); return r.charAt(0).toUpperCase()+r.slice(1);
+}
+const rc={};
+window.romanize=n=>rc[n]||(rc[n]=n.replace(/[가-힣]+/g,m=>' '+romRun(m)+' ').replace(/\s+/g,' ').trim());
+window.normQ=t=>String(t).toLowerCase().replace(/[^a-z0-9가-힣]/g,'');
+window.nm=r=>{ if(!r) return ''; if(lang==='en'){ const b=brandEn(r.name); return b||romanize(r.name); } return r.name; };
 if(lang!=='ko') return;
 const K=D.KO, P=D.PLACES;
 const PAT=[

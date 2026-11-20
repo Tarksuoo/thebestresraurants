@@ -127,6 +127,7 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .results{top:calc(62px + var(--safe-t))}
 .banner{top:calc(118px + var(--safe-t))}
 
+.ko{font-style:normal;color:var(--muted);font-weight:400;font-size:.88em}
 .lang{padding:0 12px;font-weight:800;font-size:13px;flex:none;pointer-events:auto}
 .acct{padding:0 14px;font-weight:650;font-size:14px;white-space:nowrap;flex:none;background:var(--green);color:#fff}
 .acct.in{padding:0;width:44px;justify-content:center;background:#fff}
@@ -226,7 +227,7 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 </style>
 </head>
 <body>
-<script src="i18n.js?v=2"></script>
+<script src="i18n.js?v=3"></script>
 <script src="data/seoul.js?v=2026-09"></script>
 <div id="mapwrap"><div id="map"></div></div>
 
@@ -724,10 +725,11 @@ function search(){
   const v=$('q').value.trim().toLowerCase();
   if(!v){$('results').hidden=true;return}
   const c=M?M.center():{lat:37.5665,lon:126.978}, d=r=>(r.lat-c.lat)**2+((r.lon-c.lon)*.79)**2;
-  const hits=R.filter(r=>r.name.toLowerCase().includes(v)||nm(r).toLowerCase().includes(v)||trK(r.sub).includes(v)||trK(r.dong).includes(v)||trK(r.gu.en).includes(v)||r.sub.toLowerCase().includes(v)||CATS[r.cat].label.toLowerCase().includes(v)||r.dong.toLowerCase().includes(v))
+  const nv=normQ(v);
+  const hits=R.filter(r=>r.name.toLowerCase().includes(v)||(nv&&normQ(nm(r)).includes(nv))||(nv&&LANG==='en'&&normQ(romanize(r.name)).includes(nv))||trK(r.sub).includes(v)||trK(r.dong).includes(v)||trK(r.gu.en).includes(v)||r.sub.toLowerCase().includes(v)||CATS[r.cat].label.toLowerCase().includes(v)||r.dong.toLowerCase().includes(v))
               .sort((a,b)=>(!!b.rv-!!a.rv)||(d(a)-d(b))).slice(0,30);
   const busy=!allDone;
-  $('results').innerHTML=hits.length?hits.map(r=>`<button class="res" data-id="${r.id}"><span class="sw" style="background:${r.rv?rateColor(r.rv.rating):'#c4cac7'}"></span><span>${esc(nm(r))}<small>${esc(r.sub)} · ${esc(r.dong)}, ${esc(r.gu.en)}</small></span></button>`).join('')+(busy?'<div class="res" style="color:var(--muted)">Searching all of Seoul…</div>':'')
+  $('results').innerHTML=hits.length?hits.map(r=>`<button class="res" data-id="${r.id}"><span class="sw" style="background:${r.rv?rateColor(r.rv.rating):'#c4cac7'}"></span><span>${esc(nm(r))}${nm(r)!==r.name?` <i class="ko">${esc(r.name)}</i>`:''}<small>${esc(r.sub)} · ${esc(r.dong)}, ${esc(r.gu.en)}</small></span></button>`).join('')+(busy?'<div class="res" style="color:var(--muted)">Searching all of Seoul…</div>':'')
     :`<div class="res" style="color:var(--muted)">${busy?'Searching all of Seoul…':'No matches. Try "ramen", "bbq" or a Korean name.'}</div>`;
   $('results').hidden=false;
 }
