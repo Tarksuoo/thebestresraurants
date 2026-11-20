@@ -589,7 +589,7 @@ const esc = s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;
 function links(r){
   const q=encodeURIComponent(r.name+' '+r.gu.ko+' '+r.addr.replace(/\s*\d+층.*$/,''));
   return {
-    naver:`https://map.naver.com/p/search/${q}`,
+    naver:`https://map.naver.com/p/directions/-/${r.lon},${r.lat},${encodeURIComponent(r.name)},,ADDRESS_POI/-/walk`,
     kakao:`https://map.kakao.com/link/to/${encodeURIComponent(r.name)},${r.lat},${r.lon}`,
     google:`https://www.google.com/maps/dir/?api=1&destination=${r.lat},${r.lon}&travelmode=walking`
   };
