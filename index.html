@@ -154,6 +154,7 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .chip{padding:9px 13px;border-radius:12px;background:#f2f4f3;text-align:left;font-weight:650;font-size:14px;color:var(--ink)}
 .chip small{display:block;font-weight:500;font-size:12px;color:var(--muted)}.chip.on{background:#ff6b00;color:#fff}.chip.on small{color:#ffe1cc}
 .order .ord-in{max-height:100%;overflow-y:auto}.order h3{font-size:13px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin:20px 0 8px}
+.ord-s{padding:14px 0;border-bottom:2px solid var(--line);font-size:25px;font-weight:800;line-height:1.35}.ord-s small{display:block;font-size:14.5px;font-weight:500;color:var(--muted);margin-top:4px}
 .ord-row em{display:block;font-style:normal;font-size:18px;color:#ff6b00;font-weight:800;margin-top:2px}
 .ord-q{padding:12px 0;border-bottom:2px solid var(--line);font-size:22px;font-weight:800}.ord-q small{display:block;font-size:14px;font-weight:500;color:var(--muted)}
 .msec{font-size:12px;font-weight:800;color:var(--green);margin:14px 0 4px;letter-spacing:.02em}
@@ -696,7 +697,7 @@ function menuHTML(r){
   loadMenuDb(r);
   const ko=LANG==='ko', db=MDB[r.id]||{photos:[],links:[]}, {list,chain}=menuItems(r), cart=CART[r.id]||[];
   const lk=db.links||[], nv=lk.filter(x=>/naver\.(me|com)/i.test(x.url)).slice(-1)[0], own=lk.filter(x=>!/naver\.(me|com)/i.test(x.url)).slice(-1)[0];
-  let h=`<div class="mlinks">${own?`<a class="mlink" href="${esc(own.url)}" target="_blank" rel="noopener nofollow">🔗 Open online menu <small>restaurant's website</small></a>`:''}<a class="mlink kk" id="kkLink" href="${kakaoUrl[r.id]?(kakaoUrl[r.id].includes('place.map.kakao.com')?kakaoUrl[r.id]+'#menuInfo':kakaoUrl[r.id]):'https://map.kakao.com/link/search/'+encodeURIComponent(r.name)}" target="_blank" rel="noopener">🟡 See menu on Kakao Map <small>photos &amp; prices</small></a>${nv?`<a class="mlink" href="${esc(nv.url)}" target="_blank" rel="noopener">🟢 See menu on Naver <small>photos &amp; prices</small></a>`:''}</div>`;
+  let h=`<div class="mlinks">${own?`<a class="mlink" href="${esc(own.url)}" target="_blank" rel="noopener nofollow">🔗 Open online menu <small>restaurant's website</small></a>`:''}<a class="mlink kk" id="kkLink" data-kk="1" href="${kakaoUrl[r.id]?(kakaoUrl[r.id].includes('place.map.kakao.com')?kakaoUrl[r.id]+'#menuInfo':kakaoUrl[r.id]):'https://map.kakao.com/link/search/'+encodeURIComponent(r.name)}" rel="noopener">🟡 See menu on Kakao Map <small>photos &amp; prices</small></a>${nv?`<a class="mlink" href="${esc(nv.url)}" target="_blank" rel="noopener">🟢 See menu on Naver <small>photos &amp; prices</small></a>`:''}</div>`;
   if(db.photos.length) h+=`<div class="ph mph">${db.photos.map(x=>`<img src="${esc(x.url)}" data-full="${esc(x.url)}" alt="">${x.approved?'':''}`).join('')}</div>${db.photos.some(x=>!x.approved)?'<div class="mnote">Your photo is waiting for approval.</div>':''}`;
   const all=r._menuAll, shown=all?list:list.slice(0,10);
   let sec='';
@@ -716,8 +717,8 @@ function menuHTML(r){
   return h;
 }
 /* ordering: dish options + questions, shown to staff in Korean with English underneath */
-const SPICE=[['','',''],['안 맵게','not spicy'],['덜 맵게','less spicy'],['보통 맵기','regular spicy'],['아주 맵게','extra spicy']].filter(x=>x[0]);
-const REQ=[['고기 적게','less meat'],['고기 빼고','no meat'],['돼지고기 빼고','no pork'],['해산물 빼고','no seafood'],['계란 빼고','no egg'],['고수 빼고','no cilantro'],['파 빼고','no green onion'],['양파 빼고','no onion'],['마늘 빼고','no garlic'],['치즈 추가','extra cheese'],['밥 추가','extra rice'],['포장','to go']];
+const SPICE=[['안 맵게','not spicy','안 맵게 해 주'],['덜 맵게','less spicy','덜 맵게 해 주'],['보통 맵기','regular spicy','보통 맵기로 해 주'],['아주 맵게','extra spicy','아주 맵게 해 주']];
+const REQ=[['고기 적게','less meat','고기는 적게 넣어 주'],['고기 빼고','no meat','고기는 빼 주'],['돼지고기 빼고','no pork','돼지고기는 빼 주'],['해산물 빼고','no seafood','해산물은 빼 주'],['계란 빼고','no egg','계란은 빼 주'],['고수 빼고','no cilantro','고수는 빼 주'],['파 빼고','no green onion','파는 빼 주'],['양파 빼고','no onion','양파는 빼 주'],['마늘 빼고','no garlic','마늘은 빼 주'],['치즈 추가','extra cheese','치즈 추가해 주'],['밥 추가','extra rice','밥 추가해 주'],['포장','to go','포장해 주']];
 const ASK=[['할랄인가요?','Is it halal?'],['돼지고기가 들어가나요?','Does it contain pork?'],['채식 메뉴가 있나요?','Do you have vegetarian dishes?'],['많이 맵나요?','Is it very spicy?'],['1인분이면 한 명이 먹기에 충분한가요?','Is one portion enough for one person?'],['2인분 이상 주문해야 하나요?','Do I have to order 2 portions or more?'],['혼자 먹어도 되나요?','Can I eat here alone?'],['영어 메뉴가 있나요?','Do you have an English menu?'],['추천 메뉴가 뭐예요?','What do you recommend?'],['땅콩 알레르기가 있어요. 괜찮을까요?','I have a peanut allergy. Is it OK?'],['해외 카드 되나요?','Can I pay with a foreign card?'],['물은 셀프인가요?','Is water self-service?'],['화장실이 어디예요?','Where is the restroom?'],['계산은 어디서 해요?','Where do I pay?']];
 const QS={};
 function cartOf(r){ return CART[r.id]=CART[r.id]||[]; }
@@ -756,13 +757,15 @@ function openAsk(r){
     else if('ashow' in t.dataset){ o.remove(); showOrder(r,true); }
   });
 }
+function sentKo(x){ const m=[x.spice>=0?SPICE[x.spice][2]:null,...x.req.map(i=>REQ[i][2])].filter(Boolean); return `${x.ko} ${x.q}개 주세요.`+(m.length?' '+m.join('시고, ')+'세요.':''); }
+function sentEn(x){ const m=[x.spice>=0?SPICE[x.spice][1]:null,...x.req.map(i=>REQ[i][1])].filter(Boolean); return `${x.q} × ${x.en}, please`+(m.length?' — '+m.join(', '):'')+'.'; }
 function lineKo(x){ const o=[x.spice>=0?SPICE[x.spice][0]:null,...x.req.map(i=>REQ[i][0])].filter(Boolean); return o.join(', '); }
 function lineEn(x){ const o=[x.spice>=0?SPICE[x.spice][1]:null,...x.req.map(i=>REQ[i][1])].filter(Boolean); return o.join(', '); }
 function showOrder(r,onlyQ){
   const c=onlyQ?[]:cartOf(r), q=[...(QS[r.id]||[])];
   if(!c.length&&!q.length) return;
   overlay(`${c.length?`<div class="ord-top">주문할게요 🙏</div><div class="ord-sub">I'd like to order</div>
-    ${c.map(x=>`<div class="ord-row"><span>${esc(x.ko)}${lineKo(x)?`<em>${esc(lineKo(x))}</em>`:''}<small>${esc(x.en)}${lineEn(x)?' · '+esc(lineEn(x)):''}</small></span><b>${x.q}개</b></div>`).join('')}`:''}
+    ${c.map(x=>`<div class="ord-s">${esc(sentKo(x))}<small>${esc(sentEn(x))}</small></div>`).join('')}`:''}
     ${q.length?`<div class="ord-top" style="font-size:26px;margin-top:${c.length?24:0}px">질문이 있어요 🙋</div><div class="ord-sub">I have a question</div>${q.map(i=>`<div class="ord-q">${esc(ASK[i][0])}<small>${esc(ASK[i][1])}</small></div>`).join('')}`:''}
     <div class="ord-note">감사합니다! 😊</div>
     <div class="ord-btns"><button data-ordclear>Clear</button><button data-ordclose>Done</button></div>`,(e,o)=>{
@@ -950,7 +953,10 @@ $('results').addEventListener('click',e=>{
 let current=null;
 function open(id){ if(current&&current!==id) $(current).classList.remove('on'); current=id; $(id).classList.add('on'); $(id).scrollTop=0; $('scrim').classList.add('on'); }
 function close(){ if(current) $(current).classList.remove('on'); current=null; $('scrim').classList.remove('on'); M&&M.clearRing(); }
-$('scrim').onclick=()=>{ if(Date.now()-lastTap<600) return; close(); }; // ignore the phone's extra click right after a tap
+$('scrim').onclick=()=>{ if(Date.now()-lastTap<600) return; close(); };
+/* coming back from Kakao/Naver: never leave a grey screen behind */
+const fixScrim=()=>{ if(current&&$(current)) $(current).classList.add('on'); else $('scrim').classList.remove('on'); };
+window.addEventListener('pageshow',fixScrim); document.addEventListener('visibilitychange',()=>{ if(!document.hidden) fixScrim(); }); // ignore the phone's extra click right after a tap
 document.addEventListener('click',e=>{if(e.target.closest('[data-close]'))close()});
 
 /* ---------- buttons ---------- */
