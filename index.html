@@ -780,7 +780,7 @@ const COUNTRIES=[['🇹🇷','Turkey'],['🇺🇸','USA'],['🇬🇧','UK'],['�
 const FLAG=Object.fromEntries(COUNTRIES.map(([f,n])=>[n,f]));
 let ROWS=[], REVIEWED=0, COUNTS={};
 /* Gold tick: add usernames here (lowercase) */
-const INSIDERS=['samanta'];
+const INSIDERS=['samanta','tarksuoo'];
 const isInsider=p=>!!p&&(!!p.verified||INSIDERS.includes(String(p.username||'').toLowerCase()));
 const sb = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {auth:{persistSession:true,autoRefreshToken:true}}) : null;
 const fmtDate=s=>{try{return new Date(s).toLocaleDateString('en-US',{month:'short',year:'numeric'})}catch(e){return ''}};
