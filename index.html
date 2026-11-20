@@ -128,6 +128,21 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .banner{top:calc(118px + var(--safe-t))}
 
 .ko{font-style:normal;color:var(--muted);font-weight:400;font-size:.88em}
+.mph img{width:120px;height:160px}
+.mi .mp{display:block;font-weight:700;margin-top:2px;font-size:13.5px}
+.qty{display:flex;align-items:center;gap:8px;flex:none}
+.qty button{width:32px;height:32px;border-radius:50%;background:#f2f4f3;font-size:18px;font-weight:700;line-height:32px;text-align:center}
+.qty .add{background:var(--green);color:#fff}
+.ghostcta{background:#f2f4f3!important;color:var(--ink)!important}
+.ordbtn{background:#ff6b00!important;position:sticky;bottom:10px;box-shadow:0 6px 20px rgba(255,107,0,.35)}
+.order{position:fixed;inset:0;z-index:2500;background:#fff;display:flex;align-items:center;justify-content:center;padding:24px}
+.ord-in{width:100%;max-width:480px}
+.ord-top{font-size:34px;font-weight:900;text-align:center}.ord-sub{text-align:center;color:var(--muted);margin-bottom:18px}
+.ord-row{display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-bottom:2px solid var(--line);font-size:26px;font-weight:800}
+.ord-row small{display:block;font-size:14px;font-weight:500;color:var(--muted)}
+.ord-row b{font-size:30px;color:#ff6b00;white-space:nowrap;margin-left:12px}
+.ord-tot{text-align:right;font-size:18px;font-weight:700;margin-top:12px}.ord-note{text-align:center;font-size:22px;margin-top:22px}
+.ord-btns{display:flex;gap:10px;margin-top:26px}.ord-btns button{flex:1;height:50px;border-radius:12px;background:#f2f4f3;font-weight:700;font-size:16px}.ord-btns button:last-child{background:var(--ink);color:#fff}
 .msec{font-size:12px;font-weight:800;color:var(--green);margin:14px 0 4px;letter-spacing:.02em}
 .mi{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid var(--line);font-size:14.5px}
 .mi small{display:block;color:var(--muted);font-size:12.5px;margin-top:2px;line-height:1.35}
@@ -187,7 +202,7 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .rank.r0{background:#9aa3a0}.rank.r1{background:#2f80ff}.rank.r2{background:#f08a00}.rank.r3{background:#1f9d55}.rank.r4{background:#7b4dff}
 .rank.r5{background:#d63b3b}.rank.r6{background:#c99700}.rank.r7{background:#1b1b1f}
 .rank.off{opacity:.28}.ranks{display:flex;flex-wrap:wrap;gap:5px;margin-top:10px}.ranks small{opacity:.8;font-weight:600}
-.thumb{display:inline-flex;align-items:center;justify-content:center;width:17px;height:17px;border-radius:50%;background:#1d9bf0;margin-left:4px;vertical-align:middle;position:relative;top:-2px;box-shadow:0 0 0 1.5px #fff}
+.tup{display:inline-flex;align-items:center;justify-content:center;width:17px;height:17px;border-radius:50%;background:#1d9bf0;margin-left:4px;vertical-align:middle;position:relative;top:-2px;box-shadow:0 0 0 1.5px #fff}
 .sheet.shiny{background-color:#ffd6e8;background-image:linear-gradient(120deg,rgba(255,255,255,.65),rgba(255,255,255,0) 45%,rgba(255,255,255,.55));background-size:300% 300%;animation:holo 9s ease infinite,tint 15s ease-in-out infinite}
 @keyframes tint{0%,100%{background-color:#ffd6e8}20%{background-color:#ffe2cc}40%{background-color:#fff3c2}60%{background-color:#d4f5e4}80%{background-color:#e2dcff}}
 .sheet.shiny .pf-stats div,.sheet.shiny .lvl{background:rgba(255,255,255,.55);backdrop-filter:blur(4px)}
@@ -232,7 +247,7 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 </style>
 </head>
 <body>
-<script src="i18n.js?v=6"></script>
+<script src="i18n.js?v=7"></script>
 <script src="data/seoul.js?v=2026-09"></script>
 <div id="mapwrap"><div id="map"></div></div>
 
@@ -640,20 +655,106 @@ function stars(x){const f=Math.round(x);return '★'.repeat(f)+'<i>'+'★'.repea
 function walk(r){ if(!myPos) return ''; const m=distM(myPos.lat,myPos.lon,r.lat,r.lon); if(m>5000) return ''; return ` · ${Math.max(1,Math.round(m*1.3/80))} min walk from you`; }
 /* ---------- chain menus (official brand sites, checked 2026-11-04) ---------- */
 let MENUS=null, menusP=null;
-function loadMenus(){ return menusP||(menusP=fetch('data/menus.json?v=2').then(x=>x.json()).then(d=>{ MENUS=Object.values(d).map(c=>({...c,pre:c.pre.slice().sort((a,b)=>b.length-a.length)})); }).catch(()=>{ MENUS=[]; })); }
+function loadMenus(){ return menusP||(menusP=fetch('data/menus.json?v=3').then(x=>x.json()).then(d=>{ MENUS=Object.values(d).map(c=>({...c,pre:c.pre.slice().sort((a,b)=>b.length-a.length)})); }).catch(()=>{ MENUS=[]; })); }
 function chainOf(r){ if(!MENUS) return null; let best=null,bl=0; for(const c of MENUS) for(const p of c.pre) if(r.name.startsWith(p)&&p.length>bl){ best=c; bl=p.length; } return best; }
-function menuHTML(r){
-  if(!MENUS){ loadMenus().then(()=>{ const b=document.getElementById('menuBox'); if(b&&current==='placeSheet'&&openR===r) b.innerHTML=menuHTML(r); }); return '<div class="empty">Loading menu…</div>'; }
-  const c=chainOf(r); if(!c) return '<div class="empty">Menu coming soon.</div>';
-  const ko=LANG==='ko', all=r._menuAll, items=all?c.items:c.items.slice(0,8);
-  let sec='', h='';
-  for(const [se,sk,nk,ne,d,p] of items){
-    const S=ko?sk:se; if(S!==sec){ sec=S; h+=`<div class="msec">${esc(S)}</div>`; }
-    h+=`<div class="mi"><div><b>${esc(ko?nk:ne)}</b>${ko?'':` <i class="ko">${esc(nk)}</i>`}${!ko&&d?`<small>${esc(d)}</small>`:''}</div><span class="mp">${p?'₩'+p.toLocaleString():''}</span></div>`;
-  }
-  if(!all&&c.items.length>8) h+=`<button class="more" data-menuall="${r.id}" style="width:100%">See full menu (${c.items.length})</button>`;
-  return h+`<div class="mnote">${c.sig?'Signature dishes of this chain. Check the full menu and prices in the store.':'Chain menu from the official brand website. Prices are recommended prices and can differ by store.'}</div>`;
+/* common dishes: Korean -> English (used for menu items people type in) */
+const DISH={'김치찌개':'Kimchi Stew','된장찌개':'Soybean Paste Stew','순두부찌개':'Soft Tofu Stew','부대찌개':'Army Stew (Budae Jjigae)','청국장':'Strong Soybean Stew','제육볶음':'Spicy Stir-fried Pork','불고기':'Bulgogi (Marinated Beef)','비빔밥':'Bibimbap (Mixed Rice)','돌솥비빔밥':'Stone-pot Bibimbap','김밥':'Gimbap (Rice Roll)','참치김밥':'Tuna Gimbap','치즈김밥':'Cheese Gimbap','떡볶이':'Tteokbokki (Spicy Rice Cakes)','라볶이':'Rabokki (Tteokbokki with Ramen)','순대':'Sundae (Blood Sausage)','튀김':'Fried Snacks','어묵':'Fish Cake','오뎅':'Fish Cake','라면':'Ramyeon (Noodle Soup)','만두':'Dumplings','군만두':'Fried Dumplings','물만두':'Boiled Dumplings','칼국수':'Knife-cut Noodle Soup','냉면':'Cold Noodles','물냉면':'Cold Noodles in Broth','비빔냉면':'Spicy Mixed Cold Noodles','막국수':'Buckwheat Noodles','잔치국수':'Warm Noodle Soup','콩국수':'Cold Soy Milk Noodles','짜장면':'Black Bean Noodles','짬뽕':'Spicy Seafood Noodle Soup','탕수육':'Sweet & Sour Pork','볶음밥':'Fried Rice','김치볶음밥':'Kimchi Fried Rice','오므라이스':'Omelette Rice','돈까스':'Pork Cutlet','돈가스':'Pork Cutlet','치즈돈까스':'Cheese Pork Cutlet','카레':'Curry','덮밥':'Rice Bowl','제육덮밥':'Spicy Pork Rice Bowl','삼겹살':'Pork Belly','목살':'Pork Neck','항정살':'Pork Jowl','갈비':'Galbi (Ribs)','돼지갈비':'Pork Ribs','소갈비':'Beef Ribs','양념갈비':'Marinated Ribs','갈비탕':'Short Rib Soup','설렁탕':'Ox Bone Soup','곰탕':'Beef Bone Soup','육개장':'Spicy Beef Soup','감자탕':'Pork Bone Stew','해장국':'Hangover Soup','순대국':'Sundae Soup','순대국밥':'Sundae Rice Soup','돼지국밥':'Pork Rice Soup','국밥':'Rice Soup','삼계탕':'Ginseng Chicken Soup','닭갈비':'Spicy Stir-fried Chicken','닭볶음탕':'Spicy Braised Chicken','찜닭':'Braised Chicken','닭한마리':'Whole Chicken Hot Pot','후라이드치킨':'Fried Chicken','후라이드':'Fried Chicken','양념치킨':'Sweet & Spicy Chicken','반반':'Half & Half Chicken','족발':'Braised Pig Trotters','보쌈':'Boiled Pork Wraps','곱창':'Grilled Intestines','막창':'Grilled Pork Intestines','대창':'Grilled Beef Intestines','해물파전':'Seafood Pancake','파전':'Green Onion Pancake','김치전':'Kimchi Pancake','빈대떡':'Mung Bean Pancake','전':'Korean Pancake','계란찜':'Steamed Egg','계란말이':'Rolled Omelette','공기밥':'Bowl of Rice','밥':'Rice','회':'Raw Fish','모듬회':'Assorted Raw Fish','초밥':'Sushi','연어':'Salmon','물회':'Cold Raw Fish Soup','매운탕':'Spicy Fish Stew','아구찜':'Braised Monkfish','낙지볶음':'Spicy Octopus','쭈꾸미':'Spicy Baby Octopus','조개구이':'Grilled Clams','생선구이':'Grilled Fish','고등어구이':'Grilled Mackerel','샤브샤브':'Shabu-shabu','마라탕':'Malatang','양꼬치':'Lamb Skewers','우동':'Udon','라멘':'Ramen','쌀국수':'Pho','피자':'Pizza','파스타':'Pasta','스테이크':'Steak','햄버거':'Burger','샐러드':'Salad','토스트':'Toast','콜라':'Coke','사이다':'Sprite','맥주':'Beer','소주':'Soju','막걸리':'Makgeolli (Rice Wine)','음료':'Drink','주먹밥':'Rice Ball','쫄면':'Spicy Chewy Noodles','비빔국수':'Spicy Mixed Noodles','수제비':'Hand-torn Noodle Soup','떡국':'Rice Cake Soup','미역국':'Seaweed Soup','김치':'Kimchi','반찬':'Side Dishes','정식':'Set Meal','세트':'Set','곱빼기':'Large Size','소':'Small','중':'Medium','대':'Large'};
+const DK=Object.keys(DISH).sort((a,b)=>b.length-a.length);
+function dishEn(k){ const t=k.replace(/\s+/g,''); if(DISH[t]) return DISH[t]; for(const d of DK) if(d.length>1&&t.endsWith(d)) return romanize(t.slice(0,-d.length))+' '+DISH[d]; return romanize(k); }
+/* per-restaurant menu photos + items from the database */
+const MDB={};
+function loadMenuDb(r){
+  if(MDB[r.id]||!sb) return;
+  MDB[r.id]={loading:true,photos:[],items:[]};
+  Promise.all([sb.from('menu_photos').select('*').eq('restaurant_id',r.id).order('created_at'),sb.from('menu_items').select('*').eq('restaurant_id',r.id).order('id')])
+    .then(([a,b])=>{ MDB[r.id]={photos:(a.data||[]),items:(b.data||[])}; refreshMenu(r); }).catch(()=>{ MDB[r.id]={photos:[],items:[]}; });
 }
+function refreshMenu(r){ const b=document.getElementById('menuBox'); if(b&&current==='placeSheet'&&openR===r) b.innerHTML=menuHTML(r); }
+const CART={};
+function menuItems(r){
+  const out=[], c=MENUS?chainOf(r):null, db=MDB[r.id];
+  if(db) for(const x of db.items) out.push({sec:'',ko:x.name_ko,en:dishEn(x.name_ko),p:x.price,pend:!x.approved});
+  if(c) for(const [se,sk,nk,ne,d,p] of c.items) out.push({sec:LANG==='ko'?sk:se,ko:nk,en:ne,d,p});
+  return {list:out,chain:c};
+}
+function menuHTML(r){
+  if(!MENUS){ loadMenus().then(()=>refreshMenu(r)); }
+  loadMenuDb(r);
+  const ko=LANG==='ko', db=MDB[r.id]||{photos:[]}, {list,chain}=menuItems(r), cart=CART[r.id]||{};
+  let h='';
+  if(db.photos.length) h+=`<div class="ph mph">${db.photos.map(x=>`<img src="${esc(x.url)}" data-full="${esc(x.url)}" alt="">${x.approved?'':''}`).join('')}</div>${db.photos.some(x=>!x.approved)?'<div class="mnote">Your photo is waiting for approval.</div>':''}`;
+  const all=r._menuAll, shown=all?list:list.slice(0,10);
+  let sec='';
+  for(const it of shown){
+    if(it.sec&&it.sec!==sec){ sec=it.sec; h+=`<div class="msec">${esc(sec)}</div>`; }
+    const q=(cart[it.ko]||{}).q||0;
+    h+=`<div class="mi"><div><b>${esc(ko?it.ko:it.en)}</b>${ko?'':` <i class="ko">${esc(it.ko)}</i>`}${!ko&&it.d?`<small>${esc(it.d)}</small>`:''}${it.p?`<span class="mp">₩${it.p.toLocaleString()}</span>`:''}</div>
+      <div class="qty">${q?`<button data-qm="${esc(it.ko)}">−</button><b>${q}</b>`:''}<button class="add" data-qp="${esc(it.ko)}">+</button></div></div>`;
+  }
+  if(!all&&list.length>10) h+=`<button class="more" data-menuall="${r.id}" style="width:100%">See full menu (${list.length})</button>`;
+  if(!list.length&&!db.photos.length) h+='<div class="empty">No menu yet. Been here? Add a photo of the menu.</div>';
+  h+=`<button class="cta ghostcta" data-menuadd="${r.id}">📷 Add menu photo</button>`;
+  if(chain) h+=`<div class="mnote">${chain.sig?'Signature dishes of this chain. Check the full menu and prices in the store.':'Chain menu from the official brand website. Prices are recommended prices and can differ by store.'}</div>`;
+  const n=Object.values(cart).reduce((s,x)=>s+x.q,0);
+  if(n) h+=`<button class="cta ordbtn" data-order="${r.id}">🗣️ Show my order to staff (${n})</button>`;
+  return h;
+}
+function cartChange(r,ko,d){
+  const it=menuItems(r).list.find(x=>x.ko===ko); if(!it) return;
+  const c=CART[r.id]=CART[r.id]||{}; const cur=c[ko]||{...it,q:0}; cur.q+=d;
+  if(cur.q<=0) delete c[ko]; else c[ko]=cur; refreshMenu(r);
+}
+function showOrder(r){
+  const c=Object.values(CART[r.id]||{}); if(!c.length) return;
+  const tot=c.every(x=>x.p)?c.reduce((s,x)=>s+x.p*x.q,0):0;
+  const o=document.createElement('div'); o.className='order';
+  o.innerHTML=`<div class="ord-in"><div class="ord-top">주문할게요 🙏</div><div class="ord-sub">I'd like to order</div>
+    ${c.map(x=>`<div class="ord-row"><span>${esc(x.ko)}<small>${esc(x.en)}</small></span><b>${x.q}개</b></div>`).join('')}
+    ${tot?`<div class="ord-tot">합계 약 ₩${tot.toLocaleString()}</div>`:''}
+    <div class="ord-note">감사합니다! 😊</div>
+    <div class="ord-btns"><button data-ordclear>Clear</button><button data-ordclose>Done</button></div></div>`;
+  o.addEventListener('click',e=>{ if(e.target.closest('[data-ordclear]')){ delete CART[r.id]; refreshMenu(r); o.remove(); } else if(e.target.closest('[data-ordclose]')) o.remove(); });
+  document.body.appendChild(o);
+}
+let mform=null;
+function openMenuAdd(r){
+  if(!session||!profile){ afterLogin=()=>openMenuAdd(r); openAuth(session?null:'signup','Create a free account to add menu photos.'); return; }
+  mform={r,photos:[],text:'',err:'',sending:false}; renderMenuAdd(); open('reviewSheet');
+}
+function renderMenuAdd(){
+  const f=mform;
+  $('reviewSheet').innerHTML=`<div class="grab"></div><button class="close" data-close>×</button><div class="sub">Menu</div><h2>${esc(nm(f.r))}</h2>
+    <h3>Photos of the menu</h3><div class="phpick">${f.photos.map((p,i)=>`<div class="thumb"><img src="${p.url}" alt=""><button data-mrm="${i}" aria-label="Remove photo">×</button></div>`).join('')}${f.photos.length<5?`<label class="addph"><input type="file" accept="image/*" multiple id="mPick" hidden><span>＋</span>Add photo</label>`:''}</div>
+    <label class="field">Dish names and prices (optional, one per line, e.g. 김치찌개 9000)<textarea id="mText" placeholder="김치찌개 9000&#10;된장찌개 9000">${esc(f.text)}</textarea></label>
+    <div class="mnote">Only photograph the menu itself. Your upload is checked before it appears.</div>
+    <div class="err">${esc(f.err)}</div><button class="cta" id="mSend" style="background:var(--green)" ${f.sending?'disabled':''}>${f.sending?'Sending…':'Send'}</button>`;
+}
+$('reviewSheet').addEventListener('change',async e=>{
+  if(e.target.id!=='mPick'||!mform) return;
+  mform.text=$('mText').value;
+  for(const file of [...e.target.files].slice(0,5-mform.photos.length)){ try{ mform.photos.push(await shrink(file)); }catch(err){ mform.err='One photo could not be read. Try a JPG or PNG.'; } }
+  renderMenuAdd();
+});
+$('reviewSheet').addEventListener('click',async e=>{
+  if(!mform) return;
+  const rm=e.target.closest('[data-mrm]'); if(rm){ mform.text=$('mText').value; mform.photos.splice(+rm.dataset.mrm,1); renderMenuAdd(); return; }
+  if(e.target.id!=='mSend'||mform.sending) return;
+  const f=mform; f.text=$('mText').value;
+  const items=f.text.split('\n').map(l=>l.trim()).filter(Boolean).map(l=>{ const m=l.match(/^(.*?)[\s:,-]*([\d,.]+)\s*(원|won|₩)?$/i); return m?{name_ko:m[1].trim().slice(0,60),price:+m[2].replace(/[^\d]/g,'')||null}:{name_ko:l.slice(0,60),price:null}; }).filter(x=>x.name_ko);
+  if(!f.photos.length&&!items.length){ f.err='Add a photo of the menu or at least one dish.'; renderMenuAdd(); return; }
+  f.sending=true; f.err=''; renderMenuAdd();
+  try{
+    for(const p of f.photos){
+      const path=`menus/${f.r.id}/${session.user.id}-${Date.now()}-${Math.random().toString(36).slice(2,7)}.jpg`;
+      const up=await sb.storage.from('review-photos').upload(path,p.blob,{contentType:'image/jpeg',upsert:false}); if(up.error) throw up.error;
+      const url=sb.storage.from('review-photos').getPublicUrl(path).data.publicUrl;
+      const {error}=await sb.from('menu_photos').insert({restaurant_id:f.r.id,url,user_id:session.user.id}); if(error) throw error;
+    }
+    if(items.length){ const {error}=await sb.from('menu_items').insert(items.map(x=>({...x,restaurant_id:f.r.id,user_id:session.user.id}))); if(error) throw error; }
+    delete MDB[f.r.id]; mform=null;
+    $('reviewSheet').innerHTML=`<div class="grab"></div><button class="close" data-close>×</button><h2>Thank you!</h2><div class="ok">Your menu was sent.<br>It will appear after it is approved, usually within a day.</div>`;
+  }catch(err){ console.error(err); f.sending=false; f.err=/menu_|relation|schema/i.test(err.message||'')?'Menu uploads are not switched on yet. Please try again later.':'Could not send. Check your connection and try again.'; renderMenuAdd(); }
+});
 let openR=null;
 function openPlace(r){
   openR=r;
@@ -680,7 +781,7 @@ function openPlace(r){
     <div id="menuBox">${menuHTML(r)}</div>
     <h3>Reviews</h3>
     ${(r.mine&&r.mine.length)?r.mine.map(v=>`<div class="rev pending"><div class="rev-h"><span class="av">${esc(v.who[0])}</span><div><b>${esc(v.who)}</b> <span class="pend">Waiting for approval</span><small>Only you can see this · ${v.date}</small></div><span class="rs">${'★'.repeat(v.stars)}<i>${'★'.repeat(5-v.stars)}</i></span></div>${v.text?`<p>${esc(v.text)}</p>`:''}</div>`).join(''):''}
-    ${r.rv?(r._all?r.rv.reviews:r.rv.reviews.slice(0,4)).map(v=>`<div class="rev"><div class="rev-h"><span class="av">${v.avatar?`<img class="avimg" src="${esc(v.avatar)}" alt="">`:esc(v.who[0]||'?')}</span><div><b>${esc(v.who)}</b>${v.rainbow?'<span class="vtick gold rainbow" data-badge="Seoul Eats Special ✨">✓</span>':v.insider?'<span class="vtick gold" data-badge="Seoul Eats Insider · hand-picked by our team">✓</span>':''}${v.thumbs?`<span class="thumb" data-badge="Approved by the Seoul Eats team">${THUMB_SVG}</span>`:''}${v.team?' <span class="teamtag">Team</span>':''} <span>${v.flag} ${esc(v.country)}</span> <span class="rank ${v.rank.cls}" data-badge="${v.rank.name} · ${v.cnt} published review${v.cnt===1?'':'s'}">${v.rank.name}</span><small>${v.date}</small></div><span class="rs">${'★'.repeat(v.stars)}<i>${'★'.repeat(5-v.stars)}</i></span></div>${v.text?`<p>${esc(v.text)}</p>`:''}${v.photos.length?`<div class="ph">${v.photos.map(u=>`<img src="${esc(u)}" loading="lazy" data-full="${esc(u)}" alt="">`).join('')}</div>`:''}</div>`).join('')+(!r._all&&r.rv.reviews.length>4?`<button class="more" data-all="${r.id}" style="width:100%">See all ${r.rv.count} reviews</button>`:''):((r.mine&&r.mine.length)?'':'<div class="empty">No tourist has reviewed this place yet. Been here? Your review helps the next traveler.</div>')}
+    ${r.rv?(r._all?r.rv.reviews:r.rv.reviews.slice(0,4)).map(v=>`<div class="rev"><div class="rev-h"><span class="av">${v.avatar?`<img class="avimg" src="${esc(v.avatar)}" alt="">`:esc(v.who[0]||'?')}</span><div><b>${esc(v.who)}</b>${v.rainbow?'<span class="vtick gold rainbow" data-badge="Seoul Eats Special ✨">✓</span>':v.insider?'<span class="vtick gold" data-badge="Seoul Eats Insider · hand-picked by our team">✓</span>':''}${v.thumbs?`<span class="tup" data-badge="Approved by the Seoul Eats team">${THUMB_SVG}</span>`:''}${v.team?' <span class="teamtag">Team</span>':''} <span>${v.flag} ${esc(v.country)}</span> <span class="rank ${v.rank.cls}" data-badge="${v.rank.name} · ${v.cnt} published review${v.cnt===1?'':'s'}">${v.rank.name}</span><small>${v.date}</small></div><span class="rs">${'★'.repeat(v.stars)}<i>${'★'.repeat(5-v.stars)}</i></span></div>${v.text?`<p>${esc(v.text)}</p>`:''}${v.photos.length?`<div class="ph">${v.photos.map(u=>`<img src="${esc(u)}" loading="lazy" data-full="${esc(u)}" alt="">`).join('')}</div>`:''}</div>`).join('')+(!r._all&&r.rv.reviews.length>4?`<button class="more" data-all="${r.id}" style="width:100%">See all ${r.rv.count} reviews</button>`:''):((r.mine&&r.mine.length)?'':'<div class="empty">No tourist has reviewed this place yet. Been here? Your review helps the next traveler.</div>')}
     <button class="cta" data-review="${r.id}">Write a review</button>
     <h3>Address</h3>
     <div class="sub" style="font-size:14px;line-height:1.5">${esc(r.addr)}, ${esc(r.gu.ko)}${r.floor&&r.floor!=='1'?` · Floor ${esc(r.floor)}`:''}</div>
@@ -921,12 +1022,12 @@ function profileHTML(){
   if(pf.view==='reviews') return head+back+`<h2>My reviews</h2>`+(st.list.length?st.list.map(x=>{const rr=byId[x.restaurant_id];return `<div class="myrev"><b>${esc(rr?nm(rr):'Restaurant')}</b> ${'★'.repeat(x.rating)}<br><small>${x.approved?'Published':'Waiting for approval'} · ${fmtDate(x.created_at)}</small></div>`}).join(''):'<div class="empty">You have not written any reviews yet.</div>');
   const rk=rankOf(st.ok), pct=rk.next?Math.min(100,Math.round((st.ok-rk.from)/(rk.next-rk.from)*100)):100, thumbs=THUMBS.includes(p.username);
   return head+`<div class="pf-top"><label class="pf-wrap"><div class="pf-av">${p.avatar_url?`<img class="avimg" src="${esc(p.avatar_url)}" alt="">`:esc(p.username[0].toUpperCase())}</div><span class="pf-cam">📷</span><input id="pAvatar" type="file" accept="image/*" hidden></label>
-    <div><div class="pf-name">${esc(p.username)}${thumbs?`<span class="thumb" style="width:20px;height:20px">${THUMB_SVG}</span>`:''}${lv.tick?`<span class="vtick ${lv.tick==='gold'?'gold':lv.tick==='rainbow'?'gold rainbow':''}" style="width:19px;height:19px;font-size:12px">✓</span>`:''}</div><div class="sub">${FLAG[p.country]||'🌍'} ${esc(p.country)}</div><div class="sub" style="font-size:12.5px">${pf.busy&&pf.view==='main'?'Uploading photo…':'Tap the photo to change it'}</div></div></div>
+    <div><div class="pf-name">${esc(p.username)}${thumbs?`<span class="tup" style="width:20px;height:20px">${THUMB_SVG}</span>`:''}${lv.tick?`<span class="vtick ${lv.tick==='gold'?'gold':lv.tick==='rainbow'?'gold rainbow':''}" style="width:19px;height:19px;font-size:12px">✓</span>`:''}</div><div class="sub">${FLAG[p.country]||'🌍'} ${esc(p.country)}</div><div class="sub" style="font-size:12.5px">${pf.busy&&pf.view==='main'?'Uploading photo…':'Tap the photo to change it'}</div></div></div>
     ${msg}
     <div class="pf-stats"><div><b>${st.ok}</b>Published</div><div><b>${st.pending}</b>Waiting</div></div>
     <div class="lvl"><span class="rank ${rk.cls}">${rk.name}</span>${rk.next?` · ${rk.next-st.ok} more published review${rk.next-st.ok>1?'s':''} to <b>${rk.nextName}</b>`:' · highest rank'}<div class="bar"><i style="width:${pct}%"></i></div>
       <div class="ranks">${RANKS.map(x=>`<span class="rank ${x[2]} ${st.ok>=x[0]?'':'off'}">${x[1]} <small>${x[0]}</small></span>`).join('')}</div></div>
-    ${lv.name||thumbs?`<div class="lvl" style="background:#fff8e6">${lv.name?`<b>${lv.name}</b> · ${lv.txt}`:''}${thumbs?`<div style="margin-top:${lv.name?6:0}px"><span class="thumb">${THUMB_SVG}</span> <b>Approved by the team</b></div>`:''}</div>`:''}
+    ${lv.name||thumbs?`<div class="lvl" style="background:#fff8e6">${lv.name?`<b>${lv.name}</b> · ${lv.txt}`:''}${thumbs?`<div style="margin-top:${lv.name?6:0}px"><span class="tup">${THUMB_SVG}</span> <b>Approved by the team</b></div>`:''}</div>`:''}
     <h3>Account</h3>
     <button class="pf-row" data-pf="reviews">My reviews <span>›</span></button>
     <button class="pf-row" data-pf="edit">Edit username &amp; country <span>›</span></button>
@@ -1058,6 +1159,7 @@ async function initAuth(){
 const me={get(){try{return JSON.parse(localStorage.getItem('he_me')||'{}')}catch(e){return {}}},set(v){try{localStorage.setItem('he_me',JSON.stringify(v))}catch(e){}}};
 let form=null;
 function openReview(r){
+  mform=null;
   if(!sb) return;
   if(!session||!profile){ afterLogin=()=>openReview(r); openAuth(session?null:'signup','Create a free account to write reviews. Your username and country are shown on your reviews.'); return; }
   form={r,rating:0,ans:{},photos:[],body:'',sending:false,done:false,err:''};
@@ -1133,6 +1235,10 @@ document.addEventListener('click',e=>{
   const im=e.target.closest('[data-full]'); if(im){ $('viewer').querySelector('img').src=im.dataset.full; $('viewer').hidden=false; return; }
   const w=e.target.closest('[data-review]'); if(w){ openReview(byId[w.dataset.review]); return; }
   const ma=e.target.closest('[data-menuall]'); if(ma){ const r=byId[ma.dataset.menuall]; r._menuAll=true; $('menuBox').innerHTML=menuHTML(r); return; }
+  const qp=e.target.closest('[data-qp]'); if(qp){ cartChange(openR,qp.dataset.qp,1); return; }
+  const qm=e.target.closest('[data-qm]'); if(qm){ cartChange(openR,qm.dataset.qm,-1); return; }
+  const od=e.target.closest('[data-order]'); if(od){ showOrder(openR); return; }
+  const mad=e.target.closest('[data-menuadd]'); if(mad){ openMenuAdd(openR); return; }
   const a=e.target.closest('[data-all]'); if(a){ const r=byId[a.dataset.all]; r._all=true; openPlace(r); }
 });
 
