@@ -613,7 +613,7 @@ function draw(){
   if(!M) return;
   const ds=[], ps=[]; let n=0; const rad=radius(), z=M.zoom(), big=z>=17;
   if(z<SHOW_Z){
-    for(const g of GU) ps.push({lat:g.c[0],lon:g.c[1],z:10,html:z<=11?`<div class="pin gu-pin">${esc(g.en.replace('-gu',''))}</div>`:`<div class="pin gu-pin">${esc(g.en)} <small>${g.n.toLocaleString()}</small></div>`,
+    for(const g of GU) ps.push({lat:g.c[0],lon:g.c[1],z:10,html:z<=11?`<div class="pin gu-pin">${esc(LANG==='ko'?g.ko:g.en.replace('-gu',''))}</div>`:`<div class="pin gu-pin">${esc(LANG==='ko'?g.ko:g.en)} <small>${g.n.toLocaleString()}</small></div>`,
       onClick:()=>{ lastTap=Date.now(); M.setView(g.c[0],g.c[1],15); }});
     M.render(ds,ps);
     $('count').innerHTML=`<b>${TOTAL.toLocaleString()}</b> restaurants in Seoul · <b>${REVIEWED}</b> reviewed`;
