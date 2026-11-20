@@ -176,7 +176,8 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .stars.on{color:#f5a623}
 .vtick{display:inline-grid;place-items:center;width:15px;height:15px;border-radius:50%;background:#1d9bf0;color:#fff!important;font-size:10px!important;font-weight:900;margin-left:3px;vertical-align:1px}
 .trusttag{background:#eef4ff;color:#1d5fd0!important;font-size:11px!important;font-weight:700;padding:1px 7px;border-radius:999px;margin-left:4px}
-.vtick.gold{background:linear-gradient(135deg,#f7c948,#d99a00)}
+.pf-name .vtick.gold{width:22px!important;height:22px!important;top:-3px;margin-left:5px}
+.vtick.gold{background:url(gold-tick.png) center/contain no-repeat;font-size:0!important;width:18px!important;height:18px!important;border-radius:0;vertical-align:middle;position:relative;top:-2px;margin-left:4px}
 .avimg{width:100%;height:100%;object-fit:cover;border-radius:50%}
 .av{overflow:hidden}.me{overflow:hidden}
 .pf-top{display:flex;gap:16px;align-items:center;margin-top:6px}
@@ -778,13 +779,16 @@ function flash(t){const b=$('banner');b.textContent=t;b.hidden=false;setTimeout(
 const COUNTRIES=[['🇹🇷','Turkey'],['🇺🇸','USA'],['🇬🇧','UK'],['🇩🇪','Germany'],['🇫🇷','France'],['🇮🇹','Italy'],['🇪🇸','Spain'],['🇳🇱','Netherlands'],['🇸🇪','Sweden'],['🇷🇺','Russia'],['🇺🇦','Ukraine'],['🇵🇱','Poland'],['🇨🇦','Canada'],['🇦🇺','Australia'],['🇧🇷','Brazil'],['🇲🇽','Mexico'],['🇯🇵','Japan'],['🇨🇳','China'],['🇹🇼','Taiwan'],['🇭🇰','Hong Kong'],['🇻🇳','Vietnam'],['🇹🇭','Thailand'],['🇵🇭','Philippines'],['🇮🇩','Indonesia'],['🇲🇾','Malaysia'],['🇸🇬','Singapore'],['🇮🇳','India'],['🇵🇰','Pakistan'],['🇧🇩','Bangladesh'],['🇺🇿','Uzbekistan'],['🇰🇿','Kazakhstan'],['🇦🇿','Azerbaijan'],['🇸🇦','Saudi Arabia'],['🇦🇪','UAE'],['🇪🇬','Egypt'],['🇲🇦','Morocco'],['🇳🇬','Nigeria'],['🇿🇦','South Africa'],['🇰🇷','Korea'],['🌍','Other']];
 const FLAG=Object.fromEntries(COUNTRIES.map(([f,n])=>[n,f]));
 let ROWS=[], REVIEWED=0, COUNTS={};
+/* Gold tick: add usernames here (lowercase) */
+const INSIDERS=[];
+const isInsider=p=>!!p&&(!!p.verified||INSIDERS.includes(String(p.username||'').toLowerCase()));
 const sb = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {auth:{persistSession:true,autoRefreshToken:true}}) : null;
 const fmtDate=s=>{try{return new Date(s).toLocaleDateString('en-US',{month:'short',year:'numeric'})}catch(e){return ''}};
 
 function toView(x){
   const name=(x.profiles&&x.profiles.username)||x.author_name||'Traveler', c=(x.profiles&&x.profiles.country)||x.country||'';
   const uid=x.user_id, cnt=uid?(COUNTS[uid]||0):0;
-  return {cnt,avatar:(x.profiles&&x.profiles.avatar_url)||'',insider:!!(x.profiles&&x.profiles.verified),verified:cnt>=100,who:name,flag:FLAG[c]||'🌍',country:c,date:fmtDate(x.created_at),stars:x.rating,text:x.body||'',team:x.is_team,photos:x.photos||[],pending:!x.approved};
+  return {cnt,avatar:(x.profiles&&x.profiles.avatar_url)||'',insider:isInsider(x.profiles),verified:cnt>=100,who:name,flag:FLAG[c]||'🌍',country:c,date:fmtDate(x.created_at),stars:x.rating,text:x.body||'',team:x.is_team,photos:x.photos||[],pending:!x.approved};
 }
 function aggregate(){
   for(const r of R){ delete r.rv; r.mine=[]; }
@@ -849,7 +853,7 @@ function level(n,insider){
   return {name:'New reviewer',next:5};
 }
 function profileHTML(){
-  const p=profile, st=myStats(), lv=level(st.ok,p.verified);
+  const p=profile, st=myStats(), lv=level(st.ok,isInsider(p));
   const head=`<div class="grab"></div><button class="close" data-close>×</button>`;
   const msg=`<div class="err">${esc(pf.err)}</div>${pf.ok?`<div class="okmsg">${esc(pf.ok)}</div>`:''}`;
   const back=`<button class="pf-back" data-pf="main">‹ Back to profile</button>`;
