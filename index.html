@@ -706,11 +706,9 @@ function cartChange(r,ko,d){
 }
 function showOrder(r){
   const c=Object.values(CART[r.id]||{}); if(!c.length) return;
-  const tot=c.every(x=>x.p)?c.reduce((s,x)=>s+x.p*x.q,0):0;
   const o=document.createElement('div'); o.className='order';
   o.innerHTML=`<div class="ord-in"><div class="ord-top">주문할게요 🙏</div><div class="ord-sub">I'd like to order</div>
     ${c.map(x=>`<div class="ord-row"><span>${esc(x.ko)}<small>${esc(x.en)}</small></span><b>${x.q}개</b></div>`).join('')}
-    ${tot?`<div class="ord-tot">합계 약 ₩${tot.toLocaleString()}</div>`:''}
     <div class="ord-note">감사합니다! 😊</div>
     <div class="ord-btns"><button data-ordclear>Clear</button><button data-ordclose>Done</button></div></div>`;
   o.addEventListener('click',e=>{ if(e.target.closest('[data-ordclear]')){ delete CART[r.id]; refreshMenu(r); o.remove(); } else if(e.target.closest('[data-ordclose]')) o.remove(); });
