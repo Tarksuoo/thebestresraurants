@@ -120,12 +120,14 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .top{flex-wrap:wrap}
 .top .search{order:1;flex:1 1 0}
 .top .acct{order:2}
+.top .lang{order:2}
 .top .brk{order:3;flex-basis:100%;height:0}
 .top .area{order:4;margin-right:auto}
 .top #filterBtn{order:5}
 .results{top:calc(62px + var(--safe-t))}
 .banner{top:calc(118px + var(--safe-t))}
 
+.lang{padding:0 12px;font-weight:800;font-size:13px;flex:none;pointer-events:auto}
 .acct{padding:0 14px;font-weight:650;font-size:14px;white-space:nowrap;flex:none;background:var(--green);color:#fff}
 .acct.in{padding:0;width:44px;justify-content:center;background:#fff}
 .area{padding:0 10px 0 12px}
@@ -224,6 +226,7 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 </style>
 </head>
 <body>
+<script src="i18n.js?v=2"></script>
 <script src="data/seoul.js?v=2026-09"></script>
 <div id="mapwrap"><div id="map"></div></div>
 
@@ -232,6 +235,7 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
   <label class="pill search"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6b736f" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="q" type="search" placeholder="Search restaurants" autocomplete="off"></label>
   <button class="pill icon-btn" id="filterBtn" aria-label="Filters"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 6h16M7 12h10M10 18h4"/></svg><span class="badge" id="badge" hidden>0</span></button>
   <div class="brk"></div>
+  <button class="pill lang" id="langBtn" aria-label="Language"></button>
   <button class="pill acct" id="acctBtn" aria-label="Account"></button>
 </div>
 <div class="results" id="results" hidden></div>
@@ -602,7 +606,7 @@ function draw(){
     if(big){
       ds.push({lat:r.lat,lon:r.lon,mode:'icon',onClick,fa:f?.35:1,
         fill:r.rv?rateColor(r.rv.rating):'#8a938f', team:!!(r.rv&&r.rv.team),
-        label:r.rv?`${r.name} ★${r.rv.rating.toFixed(1)}`:r.name, lc:'#1b1f1d',
+        label:r.rv?`${nm(r)} ★${r.rv.rating.toFixed(1)}`:nm(r), lc:'#1b1f1d',
         prio:(r.rv?(r.rv.team?0:1e5):2e5)+Math.abs(r.lat-cy)*1e5+Math.abs(r.lon-cx)*1e5});
       continue;
     }
@@ -631,7 +635,7 @@ function openPlace(r){
   const l=links(r), c=CATS[r.cat];
   $('placeSheet').innerHTML=`
     <div class="grab"></div><button class="close" data-close>×</button>
-    <h2>${esc(r.name)}${r.branch?` <span class="sub">${esc(r.branch)}</span>`:''}</h2>
+    <h2>${esc(nm(r))}${r.branch?` <span class="sub">${esc(r.branch)}</span>`:''}</h2>${nm(r)!==r.name?`<div class="sub" style="margin-top:-2px">${esc(r.name)}</div>`:''}
     <div class="row" style="margin-top:6px">
       <span class="tag">${esc(r.sub)}</span>
       <span class="tag">${esc(r.dong)}, ${esc(r.gu.en)}</span>
@@ -720,10 +724,10 @@ function search(){
   const v=$('q').value.trim().toLowerCase();
   if(!v){$('results').hidden=true;return}
   const c=M?M.center():{lat:37.5665,lon:126.978}, d=r=>(r.lat-c.lat)**2+((r.lon-c.lon)*.79)**2;
-  const hits=R.filter(r=>r.name.toLowerCase().includes(v)||r.sub.toLowerCase().includes(v)||CATS[r.cat].label.toLowerCase().includes(v)||r.dong.toLowerCase().includes(v))
+  const hits=R.filter(r=>r.name.toLowerCase().includes(v)||nm(r).toLowerCase().includes(v)||trK(r.sub).includes(v)||trK(r.dong).includes(v)||trK(r.gu.en).includes(v)||r.sub.toLowerCase().includes(v)||CATS[r.cat].label.toLowerCase().includes(v)||r.dong.toLowerCase().includes(v))
               .sort((a,b)=>(!!b.rv-!!a.rv)||(d(a)-d(b))).slice(0,30);
   const busy=!allDone;
-  $('results').innerHTML=hits.length?hits.map(r=>`<button class="res" data-id="${r.id}"><span class="sw" style="background:${r.rv?rateColor(r.rv.rating):'#c4cac7'}"></span><span>${esc(r.name)}<small>${esc(r.sub)} · ${esc(r.dong)}, ${esc(r.gu.en)}</small></span></button>`).join('')+(busy?'<div class="res" style="color:var(--muted)">Searching all of Seoul…</div>':'')
+  $('results').innerHTML=hits.length?hits.map(r=>`<button class="res" data-id="${r.id}"><span class="sw" style="background:${r.rv?rateColor(r.rv.rating):'#c4cac7'}"></span><span>${esc(nm(r))}<small>${esc(r.sub)} · ${esc(r.dong)}, ${esc(r.gu.en)}</small></span></button>`).join('')+(busy?'<div class="res" style="color:var(--muted)">Searching all of Seoul…</div>':'')
     :`<div class="res" style="color:var(--muted)">${busy?'Searching all of Seoul…':'No matches. Try "ramen", "bbq" or a Korean name.'}</div>`;
   $('results').hidden=false;
 }
@@ -773,7 +777,7 @@ function showNearby(){
   const near=R.map(r=>({r,d:distM(myPos.lat,myPos.lon,r.lat,r.lon)})).filter(x=>x.d<250).sort((a,b)=>a.d-b.d).slice(0,8);
   $('nearSheet').innerHTML=`<div class="grab"></div><button class="close" data-close>×</button>
     <h2>Near you</h2><div class="sub">Tap a place to see it, or review where you are now.</div>
-    ${near.length?near.map(({r,d})=>`<div class="near"><button class="near-main" data-open="${r.id}"><span class="sw" style="background:${r.rv?rateColor(r.rv.rating):'#8a938f'}"></span><span><b>${esc(r.name)}</b><small>${esc(r.sub)} · ${Math.round(d)} m</small></span></button><button class="near-rev" data-review="${r.id}">Review</button></div>`).join('')
+    ${near.length?near.map(({r,d})=>`<div class="near"><button class="near-main" data-open="${r.id}"><span class="sw" style="background:${r.rv?rateColor(r.rv.rating):'#8a938f'}"></span><span><b>${esc(nm(r))}</b><small>${esc(r.sub)} · ${Math.round(d)} m</small></span></button><button class="near-rev" data-review="${r.id}">Review</button></div>`).join('')
       :'<div class="empty" style="margin-top:12px">No restaurants within 250 m.</div>'}`;
   open('nearSheet');
 }
@@ -888,7 +892,7 @@ function profileHTML(){
     <label class="field">New password (at least 6 characters)<input id="pPass" type="password"></label>
     <label class="field">Repeat new password<input id="pPass2" type="password"></label>${msg}
     <button class="cta" id="pSavePass" style="background:var(--green)" ${pf.busy?'disabled':''}>${pf.busy?'Please wait…':'Change password'}</button>`;
-  if(pf.view==='reviews') return head+back+`<h2>My reviews</h2>`+(st.list.length?st.list.map(x=>{const rr=byId[x.restaurant_id];return `<div class="myrev"><b>${esc(rr?rr.name:'Restaurant')}</b> ${'★'.repeat(x.rating)}<br><small>${x.approved?'Published':'Waiting for approval'} · ${fmtDate(x.created_at)}</small></div>`}).join(''):'<div class="empty">You have not written any reviews yet.</div>');
+  if(pf.view==='reviews') return head+back+`<h2>My reviews</h2>`+(st.list.length?st.list.map(x=>{const rr=byId[x.restaurant_id];return `<div class="myrev"><b>${esc(rr?nm(rr):'Restaurant')}</b> ${'★'.repeat(x.rating)}<br><small>${x.approved?'Published':'Waiting for approval'} · ${fmtDate(x.created_at)}</small></div>`}).join(''):'<div class="empty">You have not written any reviews yet.</div>');
   const rk=rankOf(st.ok), pct=rk.next?Math.min(100,Math.round((st.ok-rk.from)/(rk.next-rk.from)*100)):100, thumbs=THUMBS.includes(p.username);
   return head+`<div class="pf-top"><label class="pf-wrap"><div class="pf-av">${p.avatar_url?`<img class="avimg" src="${esc(p.avatar_url)}" alt="">`:esc(p.username[0].toUpperCase())}</div><span class="pf-cam">📷</span><input id="pAvatar" type="file" accept="image/*" hidden></label>
     <div><div class="pf-name">${esc(p.username)}${thumbs?`<span class="thumb" style="width:20px;height:20px">${THUMB_SVG}</span>`:''}${lv.tick?`<span class="vtick ${lv.tick==='gold'?'gold':lv.tick==='rainbow'?'gold rainbow':''}" style="width:19px;height:19px;font-size:12px">✓</span>`:''}</div><div class="sub">${FLAG[p.country]||'🌍'} ${esc(p.country)}</div><div class="sub" style="font-size:12.5px">${pf.busy&&pf.view==='main'?'Uploading photo…':'Tap the photo to change it'}</div></div></div>
@@ -1017,6 +1021,8 @@ $('authSheet').addEventListener('click',async e=>{
   auth.busy=false; renderAuth();
   if(session&&profile&&!auth.err) finishLogin();
 });
+$('langBtn').textContent=LANG==='ko'?'EN':'한국어';
+$('langBtn').onclick=()=>setLang(LANG==='ko'?'en':'ko');
 $('acctBtn').onclick=()=>{ pf={view:'main',err:'',ok:'',busy:false}; openAuth(session?null:'signup'); };
 async function initAuth(){
   if(!sb) return;
@@ -1034,11 +1040,11 @@ function openReview(r){
 function renderReview(){
   const f=form,r=f.r;
   if(f.done){
-    $('reviewSheet').innerHTML=`<div class="grab"></div><button class="close" data-close>×</button><h2>Thank you!</h2><div class="ok">Your review of <b>${esc(r.name)}</b> was sent.<br>It will appear on the map after it is approved, usually within a day.</div><button class="cta" data-back="${r.id}">Back to ${esc(r.name)}</button>`;
+    $('reviewSheet').innerHTML=`<div class="grab"></div><button class="close" data-close>×</button><h2>Thank you!</h2><div class="ok">Your review of <b>${esc(nm(r))}</b> was sent.<br>It will appear on the map after it is approved, usually within a day.</div><button class="cta" data-back="${r.id}">Back to ${esc(r.name)}</button>`;
     return;
   }
   $('reviewSheet').innerHTML=`<div class="grab"></div><button class="close" data-close>×</button>
-    <div class="sub">Review</div><h2>${esc(r.name)}</h2>
+    <div class="sub">Review</div><h2>${esc(nm(r))}</h2>
     <h3>Your rating</h3>
     <div class="starpick">${[1,2,3,4,5].map(i=>`<button data-star="${i}" class="${i<=f.rating?'on':''}" aria-label="${i} stars">★</button>`).join('')}</div>
     <h3>Quick questions</h3>
