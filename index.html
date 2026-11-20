@@ -175,6 +175,16 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .stars i{font-style:normal;color:#d5d9d7}
 .stars.on{color:#f5a623}
 .vtick{display:inline-grid;place-items:center;width:15px;height:15px;border-radius:50%;background:#1d9bf0;color:#fff!important;font-size:10px!important;font-weight:900;margin-left:3px;vertical-align:1px}
+.rank{display:inline-block;font-size:10.5px!important;font-weight:800;letter-spacing:.02em;padding:1px 7px;border-radius:999px;color:#fff!important;vertical-align:1px}
+.rank.r0{background:#9aa3a0}.rank.r1{background:#3bb273}.rank.r2{background:#13a3a3}.rank.r3{background:#2f80ff}.rank.r4{background:#7b4dff}
+.rank.r5{background:linear-gradient(90deg,#ff8a00,#ff5e3a)}.rank.r6{background:linear-gradient(90deg,#d99a00,#ff3b5c)}.rank.r7{background:linear-gradient(90deg,#ff3b5c,#ffb300,#34c759,#2f80ff,#a14bff)}
+.rank.off{opacity:.28}.ranks{display:flex;flex-wrap:wrap;gap:5px;margin-top:10px}.ranks small{opacity:.8;font-weight:600}
+.thumb{display:inline-flex;align-items:center;justify-content:center;width:17px;height:17px;border-radius:50%;background:#1d9bf0;margin-left:4px;vertical-align:middle;position:relative;top:-2px;box-shadow:0 0 0 1.5px #fff}
+.sheet.shiny{background:linear-gradient(120deg,#ffd1f0,#fff3c4,#c9f7e3,#cfe3ff,#e6d4ff,#ffd1f0);background-size:400% 400%;animation:holo 10s ease infinite}
+.sheet.shiny .pf-stats div,.sheet.shiny .lvl{background:rgba(255,255,255,.55);backdrop-filter:blur(4px)}
+.sheet.shiny .pf-row{border-color:rgba(255,255,255,.7)}
+.sheet.shiny .pf-av{box-shadow:0 0 0 3px #fff,0 0 18px 4px rgba(255,120,220,.55)}
+@keyframes holo{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
 .trusttag{background:#eef4ff;color:#1d5fd0!important;font-size:11px!important;font-weight:700;padding:1px 7px;border-radius:999px;margin-left:4px}
 .pf-name .vtick.gold{width:22px!important;height:22px!important;top:-3px;margin-left:5px}
 .vtick.gold.rainbow{background-image:url(rainbow-tick.png?v=2)!important}
@@ -640,7 +650,7 @@ function openPlace(r){
     <div class="empty">Menu coming soon.</div>
     <h3>Reviews</h3>
     ${(r.mine&&r.mine.length)?r.mine.map(v=>`<div class="rev pending"><div class="rev-h"><span class="av">${esc(v.who[0])}</span><div><b>${esc(v.who)}</b> <span class="pend">Waiting for approval</span><small>Only you can see this · ${v.date}</small></div><span class="rs">${'★'.repeat(v.stars)}<i>${'★'.repeat(5-v.stars)}</i></span></div>${v.text?`<p>${esc(v.text)}</p>`:''}</div>`).join(''):''}
-    ${r.rv?(r._all?r.rv.reviews:r.rv.reviews.slice(0,4)).map(v=>`<div class="rev"><div class="rev-h"><span class="av">${v.avatar?`<img class="avimg" src="${esc(v.avatar)}" alt="">`:esc(v.who[0]||'?')}</span><div><b>${esc(v.who)}</b>${v.rainbow?'<span class="vtick gold rainbow" data-badge="Seoul Eats Special ✨">✓</span>':v.insider?'<span class="vtick gold" data-badge="Seoul Eats Insider · hand-picked by our team">✓</span>':v.verified?'<span class="vtick" data-badge="Verified reviewer · 100+ published reviews">✓</span>':v.cnt>=20?'<span class="trusttag">Trusted</span>':''}${v.team?' <span class="teamtag">Team</span>':''} <span>${v.flag} ${esc(v.country)}</span><small>${v.date}</small></div><span class="rs">${'★'.repeat(v.stars)}<i>${'★'.repeat(5-v.stars)}</i></span></div>${v.text?`<p>${esc(v.text)}</p>`:''}${v.photos.length?`<div class="ph">${v.photos.map(u=>`<img src="${esc(u)}" loading="lazy" data-full="${esc(u)}" alt="">`).join('')}</div>`:''}</div>`).join('')+(!r._all&&r.rv.reviews.length>4?`<button class="more" data-all="${r.id}" style="width:100%">See all ${r.rv.count} reviews</button>`:''):((r.mine&&r.mine.length)?'':'<div class="empty">No tourist has reviewed this place yet. Been here? Your review helps the next traveler.</div>')}
+    ${r.rv?(r._all?r.rv.reviews:r.rv.reviews.slice(0,4)).map(v=>`<div class="rev"><div class="rev-h"><span class="av">${v.avatar?`<img class="avimg" src="${esc(v.avatar)}" alt="">`:esc(v.who[0]||'?')}</span><div><b>${esc(v.who)}</b>${v.rainbow?'<span class="vtick gold rainbow" data-badge="Seoul Eats Special ✨">✓</span>':v.insider?'<span class="vtick gold" data-badge="Seoul Eats Insider · hand-picked by our team">✓</span>':''}${v.thumbs?`<span class="thumb" data-badge="Approved by the Seoul Eats team">${THUMB_SVG}</span>`:''}${v.team?' <span class="teamtag">Team</span>':''} <span>${v.flag} ${esc(v.country)}</span> <span class="rank ${v.rank.cls}" data-badge="${v.rank.name} · ${v.cnt} published review${v.cnt===1?'':'s'}">${v.rank.name}</span><small>${v.date}</small></div><span class="rs">${'★'.repeat(v.stars)}<i>${'★'.repeat(5-v.stars)}</i></span></div>${v.text?`<p>${esc(v.text)}</p>`:''}${v.photos.length?`<div class="ph">${v.photos.map(u=>`<img src="${esc(u)}" loading="lazy" data-full="${esc(u)}" alt="">`).join('')}</div>`:''}</div>`).join('')+(!r._all&&r.rv.reviews.length>4?`<button class="more" data-all="${r.id}" style="width:100%">See all ${r.rv.count} reviews</button>`:''):((r.mine&&r.mine.length)?'':'<div class="empty">No tourist has reviewed this place yet. Been here? Your review helps the next traveler.</div>')}
     <button class="cta" data-review="${r.id}">Write a review</button>
     <h3>Address</h3>
     <div class="sub" style="font-size:14px;line-height:1.5">${esc(r.addr)}, ${esc(r.gu.ko)}${r.floor&&r.floor!=='1'?` · Floor ${esc(r.floor)}`:''}</div>
@@ -784,6 +794,13 @@ let ROWS=[], REVIEWED=0, COUNTS={};
 const INSIDERS=['samanta'];
 /* Rainbow tick: exact usernames */
 const RAINBOW=['Tarksuoo','Jane_ff'];
+/* Blue thumbs-up: exact usernames, given by hand */
+const THUMBS=[];
+/* Shiny holographic profile: exact usernames */
+const SHINY=[];
+const RANKS=[[0,'Beginner','r0'],[5,'Rookie','r1'],[10,'Explorer','r2'],[50,'Pro','r3'],[100,'Expert','r4'],[250,'Master','r5'],[500,'Legend','r6'],[1000,'Mythic','r7']];
+const rankOf=n=>{let i=0; RANKS.forEach((x,j)=>{ if(n>=x[0]) i=j; }); return {name:RANKS[i][1],cls:RANKS[i][2],next:RANKS[i+1]?RANKS[i+1][0]:null,nextName:RANKS[i+1]?RANKS[i+1][1]:null,from:RANKS[i][0]};};
+const THUMB_SVG='<svg viewBox="0 0 24 24" width="11" height="11" fill="#fff"><path d="M2 21h4V9H2v12zm20-11c0-1.1-.9-2-2-2h-6.3l1-4.6v-.3c0-.4-.2-.8-.4-1.1L13.2 1 6.6 7.6C6.2 8 6 8.5 6 9v10c0 1.1.9 2 2 2h9c.8 0 1.5-.5 1.8-1.2l3-7.1c.1-.2.2-.5.2-.7v-2z"/></svg>';
 const lookAlike=u=>[...INSIDERS,...RAINBOW].some(n=>n.toLowerCase()===String(u).toLowerCase()&&n!==u)||ROWS.some(x=>x.profiles&&x.profiles.username&&x.profiles.username.toLowerCase()===String(u).toLowerCase());
 const isInsider=p=>!!p&&(!!p.verified||INSIDERS.includes(String(p.username||'')));
 const sb = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {auth:{persistSession:true,autoRefreshToken:true}}) : null;
@@ -792,7 +809,7 @@ const fmtDate=s=>{try{return new Date(s).toLocaleDateString('en-US',{month:'shor
 function toView(x){
   const name=(x.profiles&&x.profiles.username)||x.author_name||'Traveler', c=(x.profiles&&x.profiles.country)||x.country||'';
   const uid=x.user_id, cnt=uid?(COUNTS[uid]||0):0;
-  return {cnt,avatar:(x.profiles&&x.profiles.avatar_url)||'',rainbow:!!x.profiles&&RAINBOW.includes(x.profiles.username),insider:isInsider(x.profiles),verified:cnt>=100,who:name,flag:FLAG[c]||'🌍',country:c,date:fmtDate(x.created_at),stars:x.rating,text:x.body||'',team:x.is_team,photos:x.photos||[],pending:!x.approved};
+  return {cnt,avatar:(x.profiles&&x.profiles.avatar_url)||'',rainbow:!!x.profiles&&RAINBOW.includes(x.profiles.username),insider:isInsider(x.profiles),thumbs:!!x.profiles&&THUMBS.includes(x.profiles.username),rank:rankOf(cnt),who:name,flag:FLAG[c]||'🌍',country:c,date:fmtDate(x.created_at),stars:x.rating,text:x.body||'',team:x.is_team,photos:x.photos||[],pending:!x.approved};
 }
 function aggregate(){
   for(const r of R){ delete r.rv; r.mine=[]; }
@@ -852,10 +869,7 @@ function myStats(){
 function level(n,insider,rainbow){
   if(rainbow) return {name:'Seoul Eats Special ✨',tick:'rainbow',next:null,txt:'rainbow tick, one of a kind'};
   if(insider) return {name:'Seoul Eats Insider',tick:'gold',next:null,txt:'gold tick, hand-picked by the team'};
-  if(n>=100) return {name:'Verified reviewer',tick:'blue',next:null,txt:'blue tick on all your reviews'};
-  if(n>=20) return {name:'Trusted reviewer',next:100};
-  if(n>=5) return {name:'Regular reviewer',next:20};
-  return {name:'New reviewer',next:5};
+  return {};
 }
 function profileHTML(){
   const p=profile, st=myStats(), lv=level(st.ok,isInsider(p),RAINBOW.includes(p.username));
@@ -874,12 +888,14 @@ function profileHTML(){
     <label class="field">Repeat new password<input id="pPass2" type="password"></label>${msg}
     <button class="cta" id="pSavePass" style="background:var(--green)" ${pf.busy?'disabled':''}>${pf.busy?'Please wait…':'Change password'}</button>`;
   if(pf.view==='reviews') return head+back+`<h2>My reviews</h2>`+(st.list.length?st.list.map(x=>{const rr=byId[x.restaurant_id];return `<div class="myrev"><b>${esc(rr?rr.name:'Restaurant')}</b> ${'★'.repeat(x.rating)}<br><small>${x.approved?'Published':'Waiting for approval'} · ${fmtDate(x.created_at)}</small></div>`}).join(''):'<div class="empty">You have not written any reviews yet.</div>');
-  const pct=lv.next?Math.min(100,Math.round(st.ok/lv.next*100)):100;
+  const rk=rankOf(st.ok), pct=rk.next?Math.min(100,Math.round((st.ok-rk.from)/(rk.next-rk.from)*100)):100, thumbs=THUMBS.includes(p.username);
   return head+`<div class="pf-top"><label class="pf-wrap"><div class="pf-av">${p.avatar_url?`<img class="avimg" src="${esc(p.avatar_url)}" alt="">`:esc(p.username[0].toUpperCase())}</div><span class="pf-cam">📷</span><input id="pAvatar" type="file" accept="image/*" hidden></label>
-    <div><div class="pf-name">${esc(p.username)}${lv.tick?`<span class="vtick ${lv.tick==='gold'?'gold':lv.tick==='rainbow'?'gold rainbow':''}" style="width:19px;height:19px;font-size:12px">✓</span>`:''}</div><div class="sub">${FLAG[p.country]||'🌍'} ${esc(p.country)}</div><div class="sub" style="font-size:12.5px">${pf.busy&&pf.view==='main'?'Uploading photo…':'Tap the photo to change it'}</div></div></div>
+    <div><div class="pf-name">${esc(p.username)}${thumbs?`<span class="thumb" style="width:20px;height:20px">${THUMB_SVG}</span>`:''}${lv.tick?`<span class="vtick ${lv.tick==='gold'?'gold':lv.tick==='rainbow'?'gold rainbow':''}" style="width:19px;height:19px;font-size:12px">✓</span>`:''}</div><div class="sub">${FLAG[p.country]||'🌍'} ${esc(p.country)}</div><div class="sub" style="font-size:12.5px">${pf.busy&&pf.view==='main'?'Uploading photo…':'Tap the photo to change it'}</div></div></div>
     ${msg}
     <div class="pf-stats"><div><b>${st.ok}</b>Published</div><div><b>${st.pending}</b>Waiting</div></div>
-    <div class="lvl"><b>${lv.name}</b>${lv.next?` · ${lv.next-st.ok} more published review${lv.next-st.ok>1?'s':''} to the next level`:' · '+lv.txt}<div class="bar"><i style="width:${pct}%"></i></div></div>
+    <div class="lvl"><span class="rank ${rk.cls}">${rk.name}</span>${rk.next?` · ${rk.next-st.ok} more published review${rk.next-st.ok>1?'s':''} to <b>${rk.nextName}</b>`:' · highest rank'}<div class="bar"><i style="width:${pct}%"></i></div>
+      <div class="ranks">${RANKS.map(x=>`<span class="rank ${x[2]} ${st.ok>=x[0]?'':'off'}">${x[1]} <small>${x[0]}</small></span>`).join('')}</div></div>
+    ${lv.name||thumbs?`<div class="lvl" style="background:#fff8e6">${lv.name?`<b>${lv.name}</b> · ${lv.txt}`:''}${thumbs?`<div style="margin-top:${lv.name?6:0}px"><span class="thumb">${THUMB_SVG}</span> <b>Approved by the team</b></div>`:''}</div>`:''}
     <h3>Account</h3>
     <button class="pf-row" data-pf="reviews">My reviews <span>›</span></button>
     <button class="pf-row" data-pf="edit">Edit username &amp; country <span>›</span></button>
@@ -903,6 +919,7 @@ async function uploadAvatar(file){
 }
 function renderAuth(){
   const a=auth, el=$('authSheet');
+  el.classList.toggle('shiny',!!(session&&profile&&SHINY.includes(profile.username)));
   if(session&&profile){ el.innerHTML=profileHTML(); return; }
   if(session&&!profile){
     el.innerHTML=`<div class="grab"></div><button class="close" data-close>×</button><h2>Almost done</h2><div class="sub">Pick a username and your country. They are shown on your reviews.</div>
