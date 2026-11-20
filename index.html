@@ -143,6 +143,9 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .ord-row b{font-size:30px;color:#ff6b00;white-space:nowrap;margin-left:12px}
 .ord-tot{text-align:right;font-size:18px;font-weight:700;margin-top:12px}.ord-note{text-align:center;font-size:22px;margin-top:22px}
 .ord-btns{display:flex;gap:10px;margin-top:26px}.ord-btns button{flex:1;height:50px;border-radius:12px;background:#f2f4f3;font-weight:700;font-size:16px}.ord-btns button:last-child{background:var(--ink);color:#fff}
+.mlinks{display:flex;flex-direction:column;gap:8px;margin-bottom:6px}
+.mlink{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-radius:12px;background:#f2f4f3;font-weight:700;color:var(--ink);text-decoration:none;font-size:14.5px}
+.mlink small{font-weight:500;color:var(--muted);font-size:12px}
 .msec{font-size:12px;font-weight:800;color:var(--green);margin:14px 0 4px;letter-spacing:.02em}
 .mi{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid var(--line);font-size:14.5px}
 .mi small{display:block;color:var(--muted);font-size:12.5px;margin-top:2px;line-height:1.35}
@@ -247,7 +250,7 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 </style>
 </head>
 <body>
-<script src="i18n.js?v=7"></script>
+<script src="i18n.js?v=8"></script>
 <script src="data/seoul.js?v=2026-09"></script>
 <div id="mapwrap"><div id="map"></div></div>
 
@@ -646,6 +649,7 @@ const esc = s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;
 function links(r){
   const q=encodeURIComponent(r.name+' '+r.gu.ko+' '+r.addr.replace(/\s*\d+층.*$/,''));
   return {
+    naverq:`https://map.naver.com/p/search/${q}`,
     naver:`https://map.naver.com/p/directions/-/${r.lon},${r.lat},${encodeURIComponent(r.name)},,ADDRESS_POI/-/walk`,
     kakao:`https://map.kakao.com/link/to/${encodeURIComponent(r.name)},${r.lat},${r.lon}`,
     google:`https://www.google.com/maps/dir/?api=1&destination=${r.lat},${r.lon}&travelmode=walking`
@@ -666,8 +670,8 @@ const MDB={};
 function loadMenuDb(r){
   if(MDB[r.id]||!sb) return;
   MDB[r.id]={loading:true,photos:[],items:[]};
-  Promise.all([sb.from('menu_photos').select('*').eq('restaurant_id',r.id).order('created_at'),sb.from('menu_items').select('*').eq('restaurant_id',r.id).order('id')])
-    .then(([a,b])=>{ MDB[r.id]={photos:(a.data||[]),items:(b.data||[])}; refreshMenu(r); }).catch(()=>{ MDB[r.id]={photos:[],items:[]}; });
+  Promise.all([sb.from('menu_photos').select('*').eq('restaurant_id',r.id).order('created_at'),sb.from('menu_items').select('*').eq('restaurant_id',r.id).order('id'),sb.from('menu_links').select('*').eq('restaurant_id',r.id).order('id')])
+    .then(([a,b,c])=>{ MDB[r.id]={photos:(a.data||[]),items:(b.data||[]),links:(c&&c.data)||[]}; refreshMenu(r); }).catch(()=>{ MDB[r.id]={photos:[],items:[]}; });
 }
 function refreshMenu(r){ const b=document.getElementById('menuBox'); if(b&&current==='placeSheet'&&openR===r) b.innerHTML=menuHTML(r); }
 const CART={};
@@ -680,8 +684,8 @@ function menuItems(r){
 function menuHTML(r){
   if(!MENUS){ loadMenus().then(()=>refreshMenu(r)); }
   loadMenuDb(r);
-  const ko=LANG==='ko', db=MDB[r.id]||{photos:[]}, {list,chain}=menuItems(r), cart=CART[r.id]||{};
-  let h='';
+  const ko=LANG==='ko', db=MDB[r.id]||{photos:[],links:[]}, {list,chain}=menuItems(r), cart=CART[r.id]||{};
+  let h=`<div class="mlinks">${(db.links||[]).slice(-1).map(x=>`<a class="mlink" href="${esc(x.url)}" target="_blank" rel="noopener nofollow">🔗 Open online menu <small>restaurant's website</small></a>`).join('')}<a class="mlink" href="${links(r).naverq}" target="_blank" rel="noopener">🟢 See menu on Naver <small>photos &amp; prices</small></a></div>`;
   if(db.photos.length) h+=`<div class="ph mph">${db.photos.map(x=>`<img src="${esc(x.url)}" data-full="${esc(x.url)}" alt="">${x.approved?'':''}`).join('')}</div>${db.photos.some(x=>!x.approved)?'<div class="mnote">Your photo is waiting for approval.</div>':''}`;
   const all=r._menuAll, shown=all?list:list.slice(0,10);
   let sec='';
@@ -693,7 +697,7 @@ function menuHTML(r){
   }
   if(!all&&list.length>10) h+=`<button class="more" data-menuall="${r.id}" style="width:100%">See full menu (${list.length})</button>`;
   if(!list.length&&!db.photos.length) h+='<div class="empty">No menu yet. Been here? Add a photo of the menu.</div>';
-  h+=`<button class="cta ghostcta" data-menuadd="${r.id}">📷 Add menu photo</button>`;
+  h+=`<button class="cta ghostcta" data-menuadd="${r.id}">📷 Add menu photo or link</button>`;
   if(chain) h+=`<div class="mnote">${chain.sig?'Signature dishes of this chain. Check the full menu and prices in the store.':'Chain menu from the official brand website. Prices are recommended prices and can differ by store.'}</div>`;
   const n=Object.values(cart).reduce((s,x)=>s+x.q,0);
   if(n) h+=`<button class="cta ordbtn" data-order="${r.id}">🗣️ Show my order to staff (${n})</button>`;
@@ -724,22 +728,24 @@ function renderMenuAdd(){
   $('reviewSheet').innerHTML=`<div class="grab"></div><button class="close" data-close>×</button><div class="sub">Menu</div><h2>${esc(nm(f.r))}</h2>
     <h3>Photos of the menu</h3><div class="phpick">${f.photos.map((p,i)=>`<div class="thumb"><img src="${p.url}" alt=""><button data-mrm="${i}" aria-label="Remove photo">×</button></div>`).join('')}${f.photos.length<5?`<label class="addph"><input type="file" accept="image/*" multiple id="mPick" hidden><span>＋</span>Add photo</label>`:''}</div>
     <label class="field">Dish names and prices (optional, one per line, e.g. 김치찌개 9000)<textarea id="mText" placeholder="김치찌개 9000&#10;된장찌개 9000">${esc(f.text)}</textarea></label>
+    <label class="field">Online menu link (optional, e.g. from the QR code on the table)<input id="mLink" type="url" inputmode="url" autocapitalize="off" placeholder="https://…" value="${esc(f.link||'')}"></label>
     <div class="mnote">Only photograph the menu itself. Your upload is checked before it appears.</div>
     <div class="err">${esc(f.err)}</div><button class="cta" id="mSend" style="background:var(--green)" ${f.sending?'disabled':''}>${f.sending?'Sending…':'Send'}</button>`;
 }
 $('reviewSheet').addEventListener('change',async e=>{
   if(e.target.id!=='mPick'||!mform) return;
-  mform.text=$('mText').value;
+  mform.text=$('mText').value; mform.link=$('mLink').value;
   for(const file of [...e.target.files].slice(0,5-mform.photos.length)){ try{ mform.photos.push(await shrink(file)); }catch(err){ mform.err='One photo could not be read. Try a JPG or PNG.'; } }
   renderMenuAdd();
 });
 $('reviewSheet').addEventListener('click',async e=>{
   if(!mform) return;
-  const rm=e.target.closest('[data-mrm]'); if(rm){ mform.text=$('mText').value; mform.photos.splice(+rm.dataset.mrm,1); renderMenuAdd(); return; }
+  const rm=e.target.closest('[data-mrm]'); if(rm){ mform.text=$('mText').value; mform.link=$('mLink').value; mform.photos.splice(+rm.dataset.mrm,1); renderMenuAdd(); return; }
   if(e.target.id!=='mSend'||mform.sending) return;
-  const f=mform; f.text=$('mText').value;
+  const f=mform; f.text=$('mText').value; f.link=($('mLink').value||'').trim();
+  if(f.link&&!/^https?:\/\/\S+\.\S+/i.test(f.link)){ f.err='Please paste a full link starting with https://'; renderMenuAdd(); return; }
   const items=f.text.split('\n').map(l=>l.trim()).filter(Boolean).map(l=>{ const m=l.match(/^(.*?)[\s:,-]*([\d,.]+)\s*(원|won|₩)?$/i); return m?{name_ko:m[1].trim().slice(0,60),price:+m[2].replace(/[^\d]/g,'')||null}:{name_ko:l.slice(0,60),price:null}; }).filter(x=>x.name_ko);
-  if(!f.photos.length&&!items.length){ f.err='Add a photo of the menu or at least one dish.'; renderMenuAdd(); return; }
+  if(!f.photos.length&&!items.length&&!f.link){ f.err='Add a photo of the menu, a dish or a link.'; renderMenuAdd(); return; }
   f.sending=true; f.err=''; renderMenuAdd();
   try{
     for(const p of f.photos){
@@ -748,6 +754,7 @@ $('reviewSheet').addEventListener('click',async e=>{
       const url=sb.storage.from('review-photos').getPublicUrl(path).data.publicUrl;
       const {error}=await sb.from('menu_photos').insert({restaurant_id:f.r.id,url,user_id:session.user.id}); if(error) throw error;
     }
+    if(f.link){ const {error}=await sb.from('menu_links').insert({restaurant_id:f.r.id,url:f.link.slice(0,500),user_id:session.user.id}); if(error) throw error; }
     if(items.length){ const {error}=await sb.from('menu_items').insert(items.map(x=>({...x,restaurant_id:f.r.id,user_id:session.user.id}))); if(error) throw error; }
     delete MDB[f.r.id]; mform=null;
     $('reviewSheet').innerHTML=`<div class="grab"></div><button class="close" data-close>×</button><h2>Thank you!</h2><div class="ok">Your menu was sent.<br>It will appear after it is approved, usually within a day.</div>`;
