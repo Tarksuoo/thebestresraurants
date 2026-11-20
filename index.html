@@ -793,7 +793,8 @@ async function loadReviews(){
   if(!sb){ $('loading').hidden=true; return; }
   const timer=setTimeout(()=>{$('loading').textContent='Reviews are taking long to load…'},8000);
   try{
-    const {data,error}=await sb.from('reviews').select('*, profiles(username,country,verified)').order('created_at',{ascending:false}).limit(5000);
+    let {data,error}=await sb.from('reviews').select('*, profiles(username,country,verified)').order('created_at',{ascending:false}).limit(5000);
+    if(error) ({data,error}=await sb.from('reviews').select('*, profiles(username,country)').order('created_at',{ascending:false}).limit(5000));
     if(error) throw error;
     ROWS=data||[]; aggregate(); draw();
     $('loading').hidden=true;
@@ -937,7 +938,7 @@ $('reviewSheet').addEventListener('click',async e=>{
       urls.push(sb.storage.from('review-photos').getPublicUrl(path).data.publicUrl);
     }
     const row={restaurant_id:form.r.id,rating:form.rating,...form.ans,photos:urls,body:form.body.trim()||null,user_id:session.user.id};
-    const {data,error}=await sb.from('reviews').insert(row).select('*, profiles(username,country,verified)');
+    const {data,error}=await sb.from('reviews').insert(row).select('*, profiles(username,country)');
     if(error) throw error;
     const saved=data[0];
     ROWS.unshift(saved); aggregate(); draw();
