@@ -180,10 +180,11 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .rank.r5{background:#d63b3b}.rank.r6{background:#c99700}.rank.r7{background:#1b1b1f}
 .rank.off{opacity:.28}.ranks{display:flex;flex-wrap:wrap;gap:5px;margin-top:10px}.ranks small{opacity:.8;font-weight:600}
 .thumb{display:inline-flex;align-items:center;justify-content:center;width:17px;height:17px;border-radius:50%;background:#1d9bf0;margin-left:4px;vertical-align:middle;position:relative;top:-2px;box-shadow:0 0 0 1.5px #fff}
-.sheet.shiny{background:linear-gradient(120deg,#ffe3ef,#fff6fa,#ffd0e4,#fff0f6,#ffc6de,#ffe3ef);background-size:400% 400%;animation:holo 10s ease infinite}
+.sheet.shiny{background-color:#ffd6e8;background-image:linear-gradient(120deg,rgba(255,255,255,.65),rgba(255,255,255,0) 45%,rgba(255,255,255,.55));background-size:300% 300%;animation:holo 9s ease infinite,tint 24s ease-in-out infinite}
+@keyframes tint{0%,100%{background-color:#ffd6e8}20%{background-color:#ffe2cc}40%{background-color:#fff3c2}60%{background-color:#d4f5e4}80%{background-color:#e2dcff}}
 .sheet.shiny .pf-stats div,.sheet.shiny .lvl{background:rgba(255,255,255,.55);backdrop-filter:blur(4px)}
 .sheet.shiny .pf-row{border-color:rgba(255,255,255,.7)}
-.sheet.shiny .pf-av{box-shadow:0 0 0 3px #fff,0 0 18px 4px rgba(255,120,220,.55)}
+.sheet.shiny .pf-av{box-shadow:0 0 0 3px #fff,0 0 18px 4px rgba(255,255,255,.9)}
 @keyframes holo{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
 .trusttag{background:#eef4ff;color:#1d5fd0!important;font-size:11px!important;font-weight:700;padding:1px 7px;border-radius:999px;margin-left:4px}
 .pf-name .vtick.gold{width:22px!important;height:22px!important;top:-3px;margin-left:5px}
