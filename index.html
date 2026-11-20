@@ -250,7 +250,7 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 </style>
 </head>
 <body>
-<script src="i18n.js?v=8"></script>
+<script src="i18n.js?v=9"></script>
 <script src="data/seoul.js?v=2026-09"></script>
 <div id="mapwrap"><div id="map"></div></div>
 
@@ -649,7 +649,7 @@ const esc = s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;
 function links(r){
   const q=encodeURIComponent(r.name+' '+r.gu.ko+' '+r.addr.replace(/\s*\d+층.*$/,''));
   return {
-    naverq:`https://map.naver.com/p/search/${q}`,
+    naverq:`https://map.naver.com/v5/search/${encodeURIComponent(r.name)}?c=${r.lon},${r.lat},17,0,0,0,dh`,
     naver:`https://map.naver.com/p/directions/-/${r.lon},${r.lat},${encodeURIComponent(r.name)},,ADDRESS_POI/-/walk`,
     kakao:`https://map.kakao.com/link/to/${encodeURIComponent(r.name)},${r.lat},${r.lon}`,
     google:`https://www.google.com/maps/dir/?api=1&destination=${r.lat},${r.lon}&travelmode=walking`
@@ -685,7 +685,8 @@ function menuHTML(r){
   if(!MENUS){ loadMenus().then(()=>refreshMenu(r)); }
   loadMenuDb(r);
   const ko=LANG==='ko', db=MDB[r.id]||{photos:[],links:[]}, {list,chain}=menuItems(r), cart=CART[r.id]||{};
-  let h=`<div class="mlinks">${(db.links||[]).slice(-1).map(x=>`<a class="mlink" href="${esc(x.url)}" target="_blank" rel="noopener nofollow">🔗 Open online menu <small>restaurant's website</small></a>`).join('')}<a class="mlink" href="${links(r).naverq}" target="_blank" rel="noopener">🟢 See menu on Naver <small>photos &amp; prices</small></a></div>`;
+  const lk=db.links||[], nv=lk.filter(x=>/naver\.(me|com)/i.test(x.url)).slice(-1)[0], own=lk.filter(x=>!/naver\.(me|com)/i.test(x.url)).slice(-1)[0];
+  let h=`<div class="mlinks">${own?`<a class="mlink" href="${esc(own.url)}" target="_blank" rel="noopener nofollow">🔗 Open online menu <small>restaurant's website</small></a>`:''}<a class="mlink" href="${nv?esc(nv.url):links(r).naverq}" target="_blank" rel="noopener">🟢 See menu on Naver <small>photos &amp; prices</small></a></div>`;
   if(db.photos.length) h+=`<div class="ph mph">${db.photos.map(x=>`<img src="${esc(x.url)}" data-full="${esc(x.url)}" alt="">${x.approved?'':''}`).join('')}</div>${db.photos.some(x=>!x.approved)?'<div class="mnote">Your photo is waiting for approval.</div>':''}`;
   const all=r._menuAll, shown=all?list:list.slice(0,10);
   let sec='';
@@ -728,7 +729,7 @@ function renderMenuAdd(){
   $('reviewSheet').innerHTML=`<div class="grab"></div><button class="close" data-close>×</button><div class="sub">Menu</div><h2>${esc(nm(f.r))}</h2>
     <h3>Photos of the menu</h3><div class="phpick">${f.photos.map((p,i)=>`<div class="thumb"><img src="${p.url}" alt=""><button data-mrm="${i}" aria-label="Remove photo">×</button></div>`).join('')}${f.photos.length<5?`<label class="addph"><input type="file" accept="image/*" multiple id="mPick" hidden><span>＋</span>Add photo</label>`:''}</div>
     <label class="field">Dish names and prices (optional, one per line, e.g. 김치찌개 9000)<textarea id="mText" placeholder="김치찌개 9000&#10;된장찌개 9000">${esc(f.text)}</textarea></label>
-    <label class="field">Online menu link (optional, e.g. from the QR code on the table)<input id="mLink" type="url" inputmode="url" autocapitalize="off" placeholder="https://…" value="${esc(f.link||'')}"></label>
+    <label class="field">Online menu link (optional): QR menu, or the Naver place share link<input id="mLink" type="url" inputmode="url" autocapitalize="off" placeholder="https://…" value="${esc(f.link||'')}"></label>
     <div class="mnote">Only photograph the menu itself. Your upload is checked before it appears.</div>
     <div class="err">${esc(f.err)}</div><button class="cta" id="mSend" style="background:var(--green)" ${f.sending?'disabled':''}>${f.sending?'Sending…':'Send'}</button>`;
 }
