@@ -174,6 +174,8 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .pin.faded{opacity:.35}
 .stars i{font-style:normal;color:#d5d9d7}
 .stars.on{color:#f5a623}
+.vtick{display:inline-grid;place-items:center;width:15px;height:15px;border-radius:50%;background:#1d9bf0;color:#fff!important;font-size:10px!important;font-weight:900;margin-left:3px;vertical-align:1px}
+.trusttag{background:#eef4ff;color:#1d5fd0!important;font-size:11px!important;font-weight:700;padding:1px 7px;border-radius:999px;margin-left:4px}
 .teamtag{background:#1f8a4c;color:#fff;font-size:11.5px;font-weight:700;padding:2px 8px;border-radius:999px}
 .demo{background:#ffe9a8;color:#7a5a00;font-size:10.5px;font-weight:800;letter-spacing:.05em;padding:2px 6px;border-radius:6px}
 .ans{font-size:13px;font-weight:650;padding:3px 10px;border-radius:999px}
@@ -618,7 +620,7 @@ function openPlace(r){
     <div class="empty">Menu coming soon.</div>
     <h3>Reviews</h3>
     ${(r.mine&&r.mine.length)?r.mine.map(v=>`<div class="rev pending"><div class="rev-h"><span class="av">${esc(v.who[0])}</span><div><b>${esc(v.who)}</b> <span class="pend">Waiting for approval</span><small>Only you can see this · ${v.date}</small></div><span class="rs">${'★'.repeat(v.stars)}<i>${'★'.repeat(5-v.stars)}</i></span></div>${v.text?`<p>${esc(v.text)}</p>`:''}</div>`).join(''):''}
-    ${r.rv?(r._all?r.rv.reviews:r.rv.reviews.slice(0,4)).map(v=>`<div class="rev"><div class="rev-h"><span class="av">${esc(v.who[0]||'?')}</span><div><b>${esc(v.who)}</b>${v.team?' <span class="teamtag">Team</span>':''} <span>${v.flag} ${esc(v.country)}</span><small>${v.date}</small></div><span class="rs">${'★'.repeat(v.stars)}<i>${'★'.repeat(5-v.stars)}</i></span></div>${v.text?`<p>${esc(v.text)}</p>`:''}${v.photos.length?`<div class="ph">${v.photos.map(u=>`<img src="${esc(u)}" loading="lazy" data-full="${esc(u)}" alt="">`).join('')}</div>`:''}</div>`).join('')+(!r._all&&r.rv.reviews.length>4?`<button class="more" data-all="${r.id}" style="width:100%">See all ${r.rv.count} reviews</button>`:''):((r.mine&&r.mine.length)?'':'<div class="empty">No tourist has reviewed this place yet. Been here? Your review helps the next traveler.</div>')}
+    ${r.rv?(r._all?r.rv.reviews:r.rv.reviews.slice(0,4)).map(v=>`<div class="rev"><div class="rev-h"><span class="av">${esc(v.who[0]||'?')}</span><div><b>${esc(v.who)}</b>${v.verified?'<span class="vtick" title="Verified reviewer">✓</span>':v.cnt>=20?'<span class="trusttag">Trusted</span>':''}${v.team?' <span class="teamtag">Team</span>':''} <span>${v.flag} ${esc(v.country)}</span><small>${v.date}</small></div><span class="rs">${'★'.repeat(v.stars)}<i>${'★'.repeat(5-v.stars)}</i></span></div>${v.text?`<p>${esc(v.text)}</p>`:''}${v.photos.length?`<div class="ph">${v.photos.map(u=>`<img src="${esc(u)}" loading="lazy" data-full="${esc(u)}" alt="">`).join('')}</div>`:''}</div>`).join('')+(!r._all&&r.rv.reviews.length>4?`<button class="more" data-all="${r.id}" style="width:100%">See all ${r.rv.count} reviews</button>`:''):((r.mine&&r.mine.length)?'':'<div class="empty">No tourist has reviewed this place yet. Been here? Your review helps the next traveler.</div>')}
     <button class="cta" data-review="${r.id}">Write a review</button>
     <h3>Address</h3>
     <div class="sub" style="font-size:14px;line-height:1.5">${esc(r.addr)}, ${esc(r.gu.ko)}${r.floor&&r.floor!=='1'?` · Floor ${esc(r.floor)}`:''}</div>
@@ -757,17 +759,19 @@ function flash(t){const b=$('banner');b.textContent=t;b.hidden=false;setTimeout(
 /* ---------- reviews: load, aggregate, write ---------- */
 const COUNTRIES=[['🇹🇷','Turkey'],['🇺🇸','USA'],['🇬🇧','UK'],['🇩🇪','Germany'],['🇫🇷','France'],['🇮🇹','Italy'],['🇪🇸','Spain'],['🇳🇱','Netherlands'],['🇸🇪','Sweden'],['🇷🇺','Russia'],['🇺🇦','Ukraine'],['🇵🇱','Poland'],['🇨🇦','Canada'],['🇦🇺','Australia'],['🇧🇷','Brazil'],['🇲🇽','Mexico'],['🇯🇵','Japan'],['🇨🇳','China'],['🇹🇼','Taiwan'],['🇭🇰','Hong Kong'],['🇻🇳','Vietnam'],['🇹🇭','Thailand'],['🇵🇭','Philippines'],['🇮🇩','Indonesia'],['🇲🇾','Malaysia'],['🇸🇬','Singapore'],['🇮🇳','India'],['🇵🇰','Pakistan'],['🇧🇩','Bangladesh'],['🇺🇿','Uzbekistan'],['🇰🇿','Kazakhstan'],['🇦🇿','Azerbaijan'],['🇸🇦','Saudi Arabia'],['🇦🇪','UAE'],['🇪🇬','Egypt'],['🇲🇦','Morocco'],['🇳🇬','Nigeria'],['🇿🇦','South Africa'],['🇰🇷','Korea'],['🌍','Other']];
 const FLAG=Object.fromEntries(COUNTRIES.map(([f,n])=>[n,f]));
-let ROWS=[], REVIEWED=0;
+let ROWS=[], REVIEWED=0, COUNTS={};
 const sb = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {auth:{persistSession:true,autoRefreshToken:true}}) : null;
 const fmtDate=s=>{try{return new Date(s).toLocaleDateString('en-US',{month:'short',year:'numeric'})}catch(e){return ''}};
 
 function toView(x){
   const name=(x.profiles&&x.profiles.username)||x.author_name||'Traveler', c=(x.profiles&&x.profiles.country)||x.country||'';
-  return {who:name,flag:FLAG[c]||'🌍',country:c,date:fmtDate(x.created_at),stars:x.rating,text:x.body||'',team:x.is_team,photos:x.photos||[],pending:!x.approved};
+  const uid=x.user_id, cnt=uid?(COUNTS[uid]||0):0;
+  return {cnt,verified:!!(x.profiles&&x.profiles.verified)||cnt>=100,who:name,flag:FLAG[c]||'🌍',country:c,date:fmtDate(x.created_at),stars:x.rating,text:x.body||'',team:x.is_team,photos:x.photos||[],pending:!x.approved};
 }
 function aggregate(){
   for(const r of R){ delete r.rv; r.mine=[]; }
   const groups={};
+  COUNTS={}; for(const x of ROWS) if(x.approved&&x.user_id) COUNTS[x.user_id]=(COUNTS[x.user_id]||0)+1;
   REVIEWED=new Set(ROWS.filter(x=>x.approved).map(x=>x.restaurant_id)).size;
   for(const row of ROWS){
     if(!row.approved){ if(byId[row.restaurant_id]) byId[row.restaurant_id].mine.push(toView(row)); continue; }
@@ -789,7 +793,7 @@ async function loadReviews(){
   if(!sb){ $('loading').hidden=true; return; }
   const timer=setTimeout(()=>{$('loading').textContent='Reviews are taking long to load…'},8000);
   try{
-    const {data,error}=await sb.from('reviews').select('*, profiles(username,country)').order('created_at',{ascending:false}).limit(5000);
+    const {data,error}=await sb.from('reviews').select('*, profiles(username,country,verified)').order('created_at',{ascending:false}).limit(5000);
     if(error) throw error;
     ROWS=data||[]; aggregate(); draw();
     $('loading').hidden=true;
@@ -873,7 +877,7 @@ $('authSheet').addEventListener('click',async e=>{
       if(error) throw error;
       session=data.session; await loadProfile();
     }
-  }catch(err){ console.error(err); auth.err = /already registered/i.test(err.message||'')?'This email already has an account. Log in instead.': /invalid login/i.test(err.message||'')?'Wrong email or password.': (err.message||'Something went wrong. Try again.'); }
+  }catch(err){ console.error(err); auth.err = /failed to fetch|network|load failed/i.test(err.message||'')?'Cannot reach the server right now. Check your internet, wait a minute and try again.': /already registered/i.test(err.message||'')?'This email already has an account. Log in instead.': /invalid login/i.test(err.message||'')?'Wrong email or password.': (err.message||'Something went wrong. Try again.'); }
   auth.busy=false; renderAuth();
   if(session&&profile&&!auth.err) finishLogin();
 });
@@ -933,7 +937,7 @@ $('reviewSheet').addEventListener('click',async e=>{
       urls.push(sb.storage.from('review-photos').getPublicUrl(path).data.publicUrl);
     }
     const row={restaurant_id:form.r.id,rating:form.rating,...form.ans,photos:urls,body:form.body.trim()||null,user_id:session.user.id};
-    const {data,error}=await sb.from('reviews').insert(row).select('*, profiles(username,country)');
+    const {data,error}=await sb.from('reviews').insert(row).select('*, profiles(username,country,verified)');
     if(error) throw error;
     const saved=data[0];
     ROWS.unshift(saved); aggregate(); draw();
