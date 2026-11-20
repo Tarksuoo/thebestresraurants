@@ -176,6 +176,23 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .stars.on{color:#f5a623}
 .vtick{display:inline-grid;place-items:center;width:15px;height:15px;border-radius:50%;background:#1d9bf0;color:#fff!important;font-size:10px!important;font-weight:900;margin-left:3px;vertical-align:1px}
 .trusttag{background:#eef4ff;color:#1d5fd0!important;font-size:11px!important;font-weight:700;padding:1px 7px;border-radius:999px;margin-left:4px}
+.avimg{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.av{overflow:hidden}.me{overflow:hidden}
+.pf-top{display:flex;gap:16px;align-items:center;margin-top:6px}
+.pf-av{position:relative;width:84px;height:84px;border-radius:50%;background:var(--green);color:#fff;font-size:34px;font-weight:800;display:flex;align-items:center;justify-content:center;flex:none;overflow:hidden}
+.pf-cam{position:absolute;right:-2px;bottom:-2px;width:30px;height:30px;border-radius:50%;background:#fff;border:1.5px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:15px}
+.pf-wrap{position:relative}
+.pf-name{font-size:22px;font-weight:800;line-height:1.2}
+.pf-stats{display:flex;gap:10px;margin-top:16px}
+.pf-stats div{flex:1;background:#f2f4f3;border-radius:12px;padding:10px;text-align:center;font-size:12px;color:var(--muted)}
+.pf-stats b{display:block;font-size:19px;color:var(--ink)}
+.lvl{margin-top:14px;background:#eef4ff;border-radius:12px;padding:12px 14px;font-size:13.5px}
+.bar{height:7px;background:#dbe6fb;border-radius:9px;margin-top:8px;overflow:hidden}.bar i{display:block;height:100%;background:#1d9bf0}
+.pf-row{display:flex;justify-content:space-between;align-items:center;width:100%;padding:15px 2px;border-bottom:1px solid var(--line);font-size:15.5px;background:none;text-align:left;color:var(--ink)}
+.pf-row span{color:var(--muted);font-size:14px}
+.pf-back{background:none;color:var(--muted);font-size:14px;padding:0;margin-bottom:6px}
+.okmsg{color:#1f8a4c;font-size:13.5px;margin-top:10px}
+.myrev{padding:10px 0;border-bottom:1px solid var(--line);font-size:14px}.myrev small{color:var(--muted)}
 .teamtag{background:#1f8a4c;color:#fff;font-size:11.5px;font-weight:700;padding:2px 8px;border-radius:999px}
 .demo{background:#ffe9a8;color:#7a5a00;font-size:10.5px;font-weight:800;letter-spacing:.05em;padding:2px 6px;border-radius:6px}
 .ans{font-size:13px;font-weight:650;padding:3px 10px;border-radius:999px}
@@ -620,7 +637,7 @@ function openPlace(r){
     <div class="empty">Menu coming soon.</div>
     <h3>Reviews</h3>
     ${(r.mine&&r.mine.length)?r.mine.map(v=>`<div class="rev pending"><div class="rev-h"><span class="av">${esc(v.who[0])}</span><div><b>${esc(v.who)}</b> <span class="pend">Waiting for approval</span><small>Only you can see this · ${v.date}</small></div><span class="rs">${'★'.repeat(v.stars)}<i>${'★'.repeat(5-v.stars)}</i></span></div>${v.text?`<p>${esc(v.text)}</p>`:''}</div>`).join(''):''}
-    ${r.rv?(r._all?r.rv.reviews:r.rv.reviews.slice(0,4)).map(v=>`<div class="rev"><div class="rev-h"><span class="av">${esc(v.who[0]||'?')}</span><div><b>${esc(v.who)}</b>${v.verified?'<span class="vtick" title="Verified reviewer">✓</span>':v.cnt>=20?'<span class="trusttag">Trusted</span>':''}${v.team?' <span class="teamtag">Team</span>':''} <span>${v.flag} ${esc(v.country)}</span><small>${v.date}</small></div><span class="rs">${'★'.repeat(v.stars)}<i>${'★'.repeat(5-v.stars)}</i></span></div>${v.text?`<p>${esc(v.text)}</p>`:''}${v.photos.length?`<div class="ph">${v.photos.map(u=>`<img src="${esc(u)}" loading="lazy" data-full="${esc(u)}" alt="">`).join('')}</div>`:''}</div>`).join('')+(!r._all&&r.rv.reviews.length>4?`<button class="more" data-all="${r.id}" style="width:100%">See all ${r.rv.count} reviews</button>`:''):((r.mine&&r.mine.length)?'':'<div class="empty">No tourist has reviewed this place yet. Been here? Your review helps the next traveler.</div>')}
+    ${r.rv?(r._all?r.rv.reviews:r.rv.reviews.slice(0,4)).map(v=>`<div class="rev"><div class="rev-h"><span class="av">${v.avatar?`<img class="avimg" src="${esc(v.avatar)}" alt="">`:esc(v.who[0]||'?')}</span><div><b>${esc(v.who)}</b>${v.verified?'<span class="vtick" title="Verified reviewer">✓</span>':v.cnt>=20?'<span class="trusttag">Trusted</span>':''}${v.team?' <span class="teamtag">Team</span>':''} <span>${v.flag} ${esc(v.country)}</span><small>${v.date}</small></div><span class="rs">${'★'.repeat(v.stars)}<i>${'★'.repeat(5-v.stars)}</i></span></div>${v.text?`<p>${esc(v.text)}</p>`:''}${v.photos.length?`<div class="ph">${v.photos.map(u=>`<img src="${esc(u)}" loading="lazy" data-full="${esc(u)}" alt="">`).join('')}</div>`:''}</div>`).join('')+(!r._all&&r.rv.reviews.length>4?`<button class="more" data-all="${r.id}" style="width:100%">See all ${r.rv.count} reviews</button>`:''):((r.mine&&r.mine.length)?'':'<div class="empty">No tourist has reviewed this place yet. Been here? Your review helps the next traveler.</div>')}
     <button class="cta" data-review="${r.id}">Write a review</button>
     <h3>Address</h3>
     <div class="sub" style="font-size:14px;line-height:1.5">${esc(r.addr)}, ${esc(r.gu.ko)}${r.floor&&r.floor!=='1'?` · Floor ${esc(r.floor)}`:''}</div>
@@ -766,7 +783,7 @@ const fmtDate=s=>{try{return new Date(s).toLocaleDateString('en-US',{month:'shor
 function toView(x){
   const name=(x.profiles&&x.profiles.username)||x.author_name||'Traveler', c=(x.profiles&&x.profiles.country)||x.country||'';
   const uid=x.user_id, cnt=uid?(COUNTS[uid]||0):0;
-  return {cnt,verified:!!(x.profiles&&x.profiles.verified)||cnt>=100,who:name,flag:FLAG[c]||'🌍',country:c,date:fmtDate(x.created_at),stars:x.rating,text:x.body||'',team:x.is_team,photos:x.photos||[],pending:!x.approved};
+  return {cnt,avatar:(x.profiles&&x.profiles.avatar_url)||'',verified:!!(x.profiles&&x.profiles.verified)||cnt>=100,who:name,flag:FLAG[c]||'🌍',country:c,date:fmtDate(x.created_at),stars:x.rating,text:x.body||'',team:x.is_team,photos:x.photos||[],pending:!x.approved};
 }
 function aggregate(){
   for(const r of R){ delete r.rv; r.mine=[]; }
@@ -793,8 +810,11 @@ async function loadReviews(){
   if(!sb){ $('loading').hidden=true; return; }
   const timer=setTimeout(()=>{$('loading').textContent='Reviews are taking long to load…'},8000);
   try{
-    let {data,error}=await sb.from('reviews').select('*, profiles(username,country,verified)').order('created_at',{ascending:false}).limit(5000);
-    if(error) ({data,error}=await sb.from('reviews').select('*, profiles(username,country)').order('created_at',{ascending:false}).limit(5000));
+    let data,error;
+    for(const cols of ['username,country,verified,avatar_url','username,country,verified','username,country']){
+      ({data,error}=await sb.from('reviews').select(`*, profiles(${cols})`).order('created_at',{ascending:false}).limit(5000));
+      if(!error) break;
+    }
     if(error) throw error;
     ROWS=data||[]; aggregate(); draw();
     $('loading').hidden=true;
@@ -811,15 +831,68 @@ async function loadProfile(){
   const {data}=await sb.from('profiles').select('*').eq('id',session.user.id).maybeSingle();
   profile=data||null;
 }
-function acctIcon(){ const b=$('acctBtn'); b.classList.toggle('in',!!profile); b.innerHTML = profile ? `<span class="me">${esc(profile.username[0].toUpperCase())}</span>` : 'Sign up'; }
+function acctIcon(){ const b=$('acctBtn'); b.classList.toggle('in',!!profile); b.innerHTML = profile ? `<span class="me">${profile.avatar_url?`<img class="avimg" src="${esc(profile.avatar_url)}" alt="">`:esc(profile.username[0].toUpperCase())}</span>` : 'Sign up'; }
 function openAuth(mode,msg){ auth.mode=mode||auth.mode; auth.err=''; auth.msg=msg||''; renderAuth(); open('authSheet'); }
 function countrySelect(id,val){ return `<select id="${id}"><option value="">Choose…</option>${COUNTRIES.map(([fl,n])=>`<option value="${n}" ${val===n?'selected':''}>${fl} ${n}</option>`).join('')}</select>`; }
+let pf={view:'main',err:'',ok:'',busy:false};
+function myStats(){
+  const uid=session.user.id, mine=ROWS.filter(x=>x.user_id===uid);
+  const ok=mine.filter(x=>x.approved);
+  return {ok:ok.length,pending:mine.length-ok.length,list:mine};
+}
+function level(n,verified){
+  if(verified||n>=100) return {name:'Verified reviewer',tick:true,next:null};
+  if(n>=20) return {name:'Trusted reviewer',next:100};
+  if(n>=5) return {name:'Regular reviewer',next:20};
+  return {name:'New reviewer',next:5};
+}
+function profileHTML(){
+  const p=profile, st=myStats(), lv=level(st.ok,p.verified);
+  const head=`<div class="grab"></div><button class="close" data-close>×</button>`;
+  const msg=`<div class="err">${esc(pf.err)}</div>${pf.ok?`<div class="okmsg">${esc(pf.ok)}</div>`:''}`;
+  const back=`<button class="pf-back" data-pf="main">‹ Back to profile</button>`;
+  if(pf.view==='edit') return head+back+`<h2>Edit profile</h2>
+    <label class="field">Username<input id="pUser" maxlength="20" autocapitalize="off" value="${esc(p.username)}"></label>
+    <label class="field">Where are you from?${countrySelect('pCountry',p.country)}</label>${msg}
+    <button class="cta" id="pSaveProfile" style="background:var(--green)" ${pf.busy?'disabled':''}>${pf.busy?'Saving…':'Save'}</button>`;
+  if(pf.view==='email') return head+back+`<h2>Change email</h2><div class="sub">Now: ${esc(session.user.email||'')}</div>
+    <label class="field">New email<input id="pEmail" type="email" autocapitalize="off"></label>${msg}
+    <button class="cta" id="pSaveEmail" style="background:var(--green)" ${pf.busy?'disabled':''}>${pf.busy?'Please wait…':'Change email'}</button>`;
+  if(pf.view==='pass') return head+back+`<h2>Change password</h2>
+    <label class="field">New password (at least 6 characters)<input id="pPass" type="password"></label>
+    <label class="field">Repeat new password<input id="pPass2" type="password"></label>${msg}
+    <button class="cta" id="pSavePass" style="background:var(--green)" ${pf.busy?'disabled':''}>${pf.busy?'Please wait…':'Change password'}</button>`;
+  if(pf.view==='reviews') return head+back+`<h2>My reviews</h2>`+(st.list.length?st.list.map(x=>{const rr=byId[x.restaurant_id];return `<div class="myrev"><b>${esc(rr?rr.name:'Restaurant')}</b> ${'★'.repeat(x.rating)}<br><small>${x.approved?'Published':'Waiting for approval'} · ${fmtDate(x.created_at)}</small></div>`}).join(''):'<div class="empty">You have not written any reviews yet.</div>');
+  const pct=lv.next?Math.min(100,Math.round(st.ok/lv.next*100)):100;
+  return head+`<div class="pf-top"><label class="pf-wrap"><div class="pf-av">${p.avatar_url?`<img class="avimg" src="${esc(p.avatar_url)}" alt="">`:esc(p.username[0].toUpperCase())}</div><span class="pf-cam">📷</span><input id="pAvatar" type="file" accept="image/*" hidden></label>
+    <div><div class="pf-name">${esc(p.username)}${lv.tick?'<span class="vtick" style="width:19px;height:19px;font-size:12px">✓</span>':''}</div><div class="sub">${FLAG[p.country]||'🌍'} ${esc(p.country)}</div><div class="sub" style="font-size:12.5px">${pf.busy&&pf.view==='main'?'Uploading photo…':'Tap the photo to change it'}</div></div></div>
+    ${msg}
+    <div class="pf-stats"><div><b>${st.ok}</b>Published</div><div><b>${st.pending}</b>Waiting</div></div>
+    <div class="lvl"><b>${lv.name}</b>${lv.next?` · ${lv.next-st.ok} more published review${lv.next-st.ok>1?'s':''} to the next level`:' · blue tick on all your reviews'}<div class="bar"><i style="width:${pct}%"></i></div></div>
+    <h3>Account</h3>
+    <button class="pf-row" data-pf="reviews">My reviews <span>›</span></button>
+    <button class="pf-row" data-pf="edit">Edit username &amp; country <span>›</span></button>
+    <button class="pf-row" data-pf="email">Change email <span>${esc(session.user.email||'')} ›</span></button>
+    <button class="pf-row" data-pf="pass">Change password <span>›</span></button>
+    <button class="cta" id="aOut" style="background:#f2f4f3;color:#a23b1f;margin-top:22px">Log out</button>`;
+}
+async function uploadAvatar(file){
+  pf.busy=true; pf.err=''; pf.ok=''; renderAuth();
+  try{
+    const ph=await shrink(file);
+    const path=`avatars/${session.user.id}/${Date.now()}.jpg`;
+    const up=await sb.storage.from('review-photos').upload(path,ph.blob,{contentType:'image/jpeg',upsert:false});
+    if(up.error) throw up.error;
+    const url=sb.storage.from('review-photos').getPublicUrl(path).data.publicUrl;
+    const {data,error}=await sb.from('profiles').update({avatar_url:url}).eq('id',session.user.id).select().single();
+    if(error) throw error;
+    profile=data; pf.ok='Profile photo updated.'; acctIcon(); loadReviews();
+  }catch(e){ console.error(e); pf.err='Could not update the photo. Try again in a moment.'; }
+  pf.busy=false; renderAuth();
+}
 function renderAuth(){
   const a=auth, el=$('authSheet');
-  if(session&&profile){
-    el.innerHTML=`<div class="grab"></div><button class="close" data-close>×</button><h2>${esc(profile.username)}</h2><div class="sub">${FLAG[profile.country]||'🌍'} ${esc(profile.country)} · ${esc(session.user.email||'')}</div>
-      <button class="cta" id="aOut" style="background:#f2f4f3;color:var(--ink);margin-top:22px">Log out</button>`; return;
-  }
+  if(session&&profile){ el.innerHTML=profileHTML(); return; }
   if(session&&!profile){
     el.innerHTML=`<div class="grab"></div><button class="close" data-close>×</button><h2>Almost done</h2><div class="sub">Pick a username and your country. They are shown on your reviews.</div>
       <label class="field">Username<input id="aUser" maxlength="20" autocapitalize="off" value="${esc(a.username)}" placeholder="e.g. emma_travels"></label>
@@ -853,7 +926,37 @@ async function finishLogin(){
   acctIcon(); await loadReviews();
   if(profile && afterLogin){ const f=afterLogin; afterLogin=null; f(); } else if(profile){ close(); }
 }
+$('authSheet').addEventListener('change',e=>{ if(e.target.id==='pAvatar'&&e.target.files[0]) uploadAvatar(e.target.files[0]); });
 $('authSheet').addEventListener('click',async e=>{
+  const pv=e.target.closest('[data-pf]'); if(pv){ pf.view=pv.dataset.pf; pf.err=''; pf.ok=''; renderAuth(); $('authSheet').scrollTop=0; return; }
+  if(['pSaveProfile','pSaveEmail','pSavePass'].includes(e.target.id)&&!pf.busy){
+    pf.err=''; pf.ok='';
+    try{
+      if(e.target.id==='pSaveProfile'){
+        const u=$('pUser').value.trim(), c=$('pCountry').value;
+        if(!/^[A-Za-z0-9_.]{3,20}$/.test(u)){ pf.err='Username: 3–20 letters, numbers, _ or .'; renderAuth(); return; }
+        if(!c){ pf.err='Please choose your country.'; renderAuth(); return; }
+        pf.busy=true; renderAuth();
+        const {data,error}=await sb.from('profiles').update({username:u,country:c}).eq('id',session.user.id).select().single();
+        if(error) throw (error.code==='23505'?new Error('That username is taken. Try another one.'):error);
+        profile=data; acctIcon(); loadReviews(); pf.view='main'; pf.ok='Profile saved.';
+      }else if(e.target.id==='pSaveEmail'){
+        const m=$('pEmail').value.trim();
+        if(!/^\S+@\S+\.\S+$/.test(m)){ pf.err='Please enter a valid email.'; renderAuth(); return; }
+        pf.busy=true; renderAuth();
+        const {error}=await sb.auth.updateUser({email:m}); if(error) throw error;
+        pf.ok='We sent a confirmation link to '+m+'. Your email changes after you tap it.';
+      }else{
+        const a=$('pPass').value, b=$('pPass2').value;
+        if(a.length<6){ pf.err='Password must be at least 6 characters.'; renderAuth(); return; }
+        if(a!==b){ pf.err='The two passwords are not the same.'; renderAuth(); return; }
+        pf.busy=true; renderAuth();
+        const {error}=await sb.auth.updateUser({password:a}); if(error) throw error;
+        pf.view='main'; pf.ok='Password changed.';
+      }
+    }catch(err){ console.error(err); pf.err=/failed to fetch|network/i.test(err.message||'')?'Cannot reach the server right now. Try again in a minute.':(err.message||'Something went wrong. Try again.'); }
+    pf.busy=false; renderAuth(); return;
+  }
   const m=e.target.closest('[data-mode]'); if(m){ readAuth(); auth.mode=m.dataset.mode; auth.err=''; renderAuth(); return; }
   if(e.target.id==='aOut'){ await sb.auth.signOut(); session=null; profile=null; acctIcon(); close(); loadReviews(); return; }
   if(e.target.id==='aProfile'){
@@ -882,7 +985,7 @@ $('authSheet').addEventListener('click',async e=>{
   auth.busy=false; renderAuth();
   if(session&&profile&&!auth.err) finishLogin();
 });
-$('acctBtn').onclick=()=>openAuth(session?null:'signup');
+$('acctBtn').onclick=()=>{ pf={view:'main',err:'',ok:'',busy:false}; openAuth(session?null:'signup'); };
 async function initAuth(){
   if(!sb) return;
   const {data}=await sb.auth.getSession(); session=data.session; await loadProfile(); acctIcon();
