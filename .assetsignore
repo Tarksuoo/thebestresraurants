@@ -1,0 +1,7 @@
+.git
+.github
+supabase
+tools
+wrangler.jsonc
+netlify.toml
+README.md
