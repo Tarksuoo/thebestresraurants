@@ -780,7 +780,7 @@ const COUNTRIES=[['🇹🇷','Turkey'],['🇺🇸','USA'],['🇬🇧','UK'],['�
 const FLAG=Object.fromEntries(COUNTRIES.map(([f,n])=>[n,f]));
 let ROWS=[], REVIEWED=0, COUNTS={};
 /* Gold tick: exact usernames (case-sensitive) */
-const INSIDERS=['samanta','Tarksuoo'];
+const INSIDERS=['samanta','Tarksuoo','Jane_ff'];
 const lookAlike=u=>INSIDERS.some(n=>n.toLowerCase()===String(u).toLowerCase()&&n!==u)||ROWS.some(x=>x.profiles&&x.profiles.username&&x.profiles.username.toLowerCase()===String(u).toLowerCase());
 const isInsider=p=>!!p&&(!!p.verified||INSIDERS.includes(String(p.username||'')));
 const sb = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {auth:{persistSession:true,autoRefreshToken:true}}) : null;
