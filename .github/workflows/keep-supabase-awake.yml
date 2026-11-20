@@ -1,0 +1,12 @@
+name: Keep Supabase awake
+on:
+  schedule:
+    - cron: "17 3 */3 * *"   # every 3 days
+  workflow_dispatch:
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          curl -fsS "https://jevklanpqwzbwgftmhmg.supabase.co/rest/v1/reviews?select=id&limit=1" \
+            -H "apikey: sb_publishable_fp6g9qnVdVLmsEhKUGNnow_AlDmvbWh" > /dev/null
