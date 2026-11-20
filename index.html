@@ -232,7 +232,7 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 </style>
 </head>
 <body>
-<script src="i18n.js?v=4"></script>
+<script src="i18n.js?v=6"></script>
 <script src="data/seoul.js?v=2026-09"></script>
 <div id="mapwrap"><div id="map"></div></div>
 
@@ -640,7 +640,7 @@ function stars(x){const f=Math.round(x);return '★'.repeat(f)+'<i>'+'★'.repea
 function walk(r){ if(!myPos) return ''; const m=distM(myPos.lat,myPos.lon,r.lat,r.lon); if(m>5000) return ''; return ` · ${Math.max(1,Math.round(m*1.3/80))} min walk from you`; }
 /* ---------- chain menus (official brand sites, checked 2026-11-04) ---------- */
 let MENUS=null, menusP=null;
-function loadMenus(){ return menusP||(menusP=fetch('data/menus.json?v=1').then(x=>x.json()).then(d=>{ MENUS=Object.values(d).map(c=>({...c,pre:c.pre.slice().sort((a,b)=>b.length-a.length)})); }).catch(()=>{ MENUS=[]; })); }
+function loadMenus(){ return menusP||(menusP=fetch('data/menus.json?v=2').then(x=>x.json()).then(d=>{ MENUS=Object.values(d).map(c=>({...c,pre:c.pre.slice().sort((a,b)=>b.length-a.length)})); }).catch(()=>{ MENUS=[]; })); }
 function chainOf(r){ if(!MENUS) return null; let best=null,bl=0; for(const c of MENUS) for(const p of c.pre) if(r.name.startsWith(p)&&p.length>bl){ best=c; bl=p.length; } return best; }
 function menuHTML(r){
   if(!MENUS){ loadMenus().then(()=>{ const b=document.getElementById('menuBox'); if(b&&current==='placeSheet'&&openR===r) b.innerHTML=menuHTML(r); }); return '<div class="empty">Loading menu…</div>'; }
@@ -652,7 +652,7 @@ function menuHTML(r){
     h+=`<div class="mi"><div><b>${esc(ko?nk:ne)}</b>${ko?'':` <i class="ko">${esc(nk)}</i>`}${!ko&&d?`<small>${esc(d)}</small>`:''}</div><span class="mp">${p?'₩'+p.toLocaleString():''}</span></div>`;
   }
   if(!all&&c.items.length>8) h+=`<button class="more" data-menuall="${r.id}" style="width:100%">See full menu (${c.items.length})</button>`;
-  return h+`<div class="mnote">Chain menu from the official brand website. Prices are recommended prices and can differ by store.</div>`;
+  return h+`<div class="mnote">${c.sig?'Signature dishes of this chain. Check the full menu and prices in the store.':'Chain menu from the official brand website. Prices are recommended prices and can differ by store.'}</div>`;
 }
 let openR=null;
 function openPlace(r){
