@@ -71,6 +71,7 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .dir{display:grid;grid-template-columns:1fr;gap:8px;margin-top:16px}
 .dir a{display:flex;align-items:center;justify-content:center;gap:8px;height:48px;border-radius:12px;text-decoration:none;font-weight:650;font-size:15px}
 .dir .primary{background:#03c75a;color:#fff}
+.dir .primary.kakao{background:#fee500;color:#191919}
 .dir .alt{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .dir .alt a{background:#f2f4f3;color:var(--ink);font-weight:600;height:42px;font-size:14px}
 .hint{font-size:12px;color:var(--muted);margin-top:6px;text-align:center}
@@ -250,7 +251,7 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 </style>
 </head>
 <body>
-<script src="i18n.js?v=9"></script>
+<script src="i18n.js?v=10"></script>
 <script src="data/seoul.js?v=2026-09"></script>
 <div id="mapwrap"><div id="map"></div></div>
 
@@ -774,12 +775,12 @@ function openPlace(r){
     </div>
     ${r.rv?`<div class="rating"><span class="stars on">${stars(r.rv.rating)}</span><b style="color:var(--ink)">${r.rv.rating.toFixed(1)}</b> · ${r.rv.count} review${r.rv.count>1?'s':''}${r.rv.team?' <span class="teamtag">✓ Team pick</span>':''}</div>`:`<div class="rating"><span class="stars">★★★★★</span>No reviews yet</div>`}
     <div class="dir">
-      <a class="primary" href="${l.naver}" target="_blank" rel="noopener">Go with Naver Map</a>
+      <a class="primary kakao" href="${l.kakao}" target="_blank" rel="noopener">Go with Kakao Map</a>
       <div class="alt">
-        <a href="${l.kakao}" target="_blank" rel="noopener">Kakao Map</a>
+        <a href="${l.naver}" target="_blank" rel="noopener">Naver Map</a>
         <a href="${l.google}" target="_blank" rel="noopener">Google Maps</a>
       </div>
-      <div class="hint">Naver gives the most accurate directions in Korea${walk(r)}</div>
+      <div class="hint">Kakao and Naver give the most accurate directions in Korea${walk(r)}</div>
     </div>
     <h3>What tourists say</h3>
     ${Q.map(([k,q])=>`<div class="q"><span>${q}</span>${r.rv?`<span class="ans ${ansClass(k,r.rv.ans[k])}">${ANS_LABEL[r.rv.ans[k]]}</span>`:'<span>No answers yet</span>'}</div>`).join('')}
