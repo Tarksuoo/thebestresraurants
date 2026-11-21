@@ -699,7 +699,7 @@ function menuHTML(r){
   loadMenuDb(r);
   const ko=LANG==='ko', db=MDB[r.id]||{photos:[],links:[]}, {list,chain}=menuItems(r), cart=CART[r.id]||[];
   const lk=db.links||[], nv=lk.filter(x=>/naver\.(me|com)/i.test(x.url)).slice(-1)[0], own=lk.filter(x=>!/naver\.(me|com)/i.test(x.url)).slice(-1)[0];
-  let h=`<div class="mlinks">${own?`<a class="mlink" href="${esc(own.url)}" target="_blank" rel="noopener nofollow">🔗 Open online menu <small>restaurant's website</small></a>`:''}<a class="mlink kk" id="kkLink" data-kk="1" href="${kakaoPlaceLink(r)}" rel="noopener">🟡 See menu on Kakao Map <small>photos &amp; prices</small></a><div class="mnote" style="margin-top:0">If you don't see a menu on Kakao Map, the restaurant hasn't shared one online. It's not a problem with the app.</div>${nv?`<a class="mlink" href="${esc(nv.url)}" target="_blank" rel="noopener">🟢 See menu on Naver <small>photos &amp; prices</small></a>`:''}</div>`;
+  let h=`<div class="mlinks">${own?`<a class="mlink" href="${esc(own.url)}" target="_blank" rel="noopener nofollow">🔗 Open online menu <small>restaurant's website</small></a>`:''}<a class="mlink kk" id="kkLink" data-kk="1" href="${kakaoPlaceLink(r)}" target="_blank" rel="noopener">🟡 See menu on Kakao Map <small>photos &amp; prices</small></a><div class="mnote" style="margin-top:0">If you don't see a menu on Kakao Map, the restaurant hasn't shared one online. It's not a problem with the app.</div>${nv?`<a class="mlink" href="${esc(nv.url)}" target="_blank" rel="noopener">🟢 See menu on Naver <small>photos &amp; prices</small></a>`:''}</div>`;
   if(db.photos.length) h+=`<div class="ph mph">${db.photos.map(x=>`<img src="${esc(x.url)}" data-full="${esc(x.url)}" alt="">${x.approved?'':''}`).join('')}</div>${db.photos.some(x=>!x.approved)?'<div class="mnote">Your photo is waiting for approval.</div>':''}`;
   const all=r._menuAll, shown=all?list:list.slice(0,10);
   let sec='';
@@ -849,7 +849,7 @@ function kakaoApp(path,web){ /* open the KakaoMap app; if it is not installed go
   if(IS_IOS) return `kakaomap://${path}`;
   return web; }
 function kakaoPlaceLink(r){ if(PM[r.id]&&PM[r.id].k&&!kakaoUrl[r.id]) kakaoUrl[r.id]="https://place.map.kakao.com/"+PM[r.id].k; const u=kakaoUrl[r.id], id=u&&(u.match(/place\.map\.kakao\.com\/(\d+)/)||[])[1];
-  return id?kakaoApp('place?id='+id,'https://place.map.kakao.com/'+id+'#menuInfo'):kakaoApp('search?q='+encodeURIComponent(r.name)+'&p='+r.lat+','+r.lon,'https://map.kakao.com/link/search/'+encodeURIComponent(r.name)); }
+  return id?'https://place.map.kakao.com/'+id+'#menuInfo':'https://map.kakao.com/link/search/'+encodeURIComponent(r.name); }
 if(IS_IOS) document.addEventListener('click',e=>{ const a=e.target.closest('a[href^="kakaomap://"]'); if(!a) return; const t=setTimeout(()=>{ if(!document.hidden) location.href='https://apps.apple.com/kr/app/id304608425'; },1600); document.addEventListener('visibilitychange',()=>clearTimeout(t),{once:true}); });
 function openKakaoMenu(r){
   const w=window.open('about:blank','_blank');
